@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test âm thanh khi gọi số</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            background: #e3f2fd;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 5px solid #2196f3;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #45a049; }
+        .urgent { background: #f44336 !important; }
+        .urgent:hover { background: #d32f2f !important; }
+        .test { background: #ff9800 !important; }
+        .test:hover { background: #f57c00 !important; }
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Test âm thanh khi gọi số thứ tự</h1>
+        
+        <div id="status" class="status info">
+            🟡 Đang khởi tạo hệ thống...
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Test trực tiếp âm thanh</h3>
+            <button onclick="testBasicAudio()" class="test">🔔 Test âm thanh cơ bản</button>
+            <button onclick="testVietnameseVoice()" class="test">🇻🇳 Test giọng Việt</button>
+            <button onclick="testKnockSound()" class="test">🚪 Test tiếng gõ cửa</button>
+            <button onclick="testRealAnnouncement()" class="test">📢 Test thông báo thực tế</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🆕 Simulate gọi số mới</h3>
+            <p>Tạo số mới và kiểm tra xem có phát âm thanh tự động không</p>
+            <select id="serviceSelect">
+                <option value="Chứng thực - Hộ tịch">Quầy 1: Chứng thực - Hộ tịch</option>
+                <option value="Văn thư">Quầy 2: Văn thư</option>
+                <option value="Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội">Quầy 3: Nội vụ - GDĐT</option>
+                <option value="Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương">Quầy 4: Nông nghiệp - Tài chính</option>
+            </select>
+            <button onclick="simulateNewCall()">🆕 Tạo lệnh gọi mới</button>
+            <button onclick="simulateRecall()">🔄 Gọi lại</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Monitor lệnh gọi real-time</h3>
+            <button onclick="startMonitoring()">▶️ Bắt đầu monitor</button>
+            <button onclick="stopMonitoring()">⏹️ Dừng monitor</button>
+            <button onclick="clearLogs()">🗑️ Xóa log</button>
+            <div id="monitorStatus" class="status info">Monitor: Chưa khởi động</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Thông tin hệ thống âm thanh</h3>
+            <div id="systemInfo">Đang kiểm tra...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Log hoạt động</h3>
+            <div id="logContainer" class="log">
+                <div>🚀 Khởi tạo hệ thống test...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let monitorInterval = null;
+        let lastKnownCalls = {};
+        let isMonitoring = false;
+
+        // Mapping service to counter
+        const serviceToCounter = {
+            "Chứng thực - Hộ tịch": "1",
+            "Văn thư": "2", 
+            "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
+            "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "4"
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logContainer = document.getElementById('logContainer');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        // Test âm thanh cơ bản
+        function testBasicAudio() {
+            log('🔔 Testing basic audio...');
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('Hello, this is a basic audio test');
+                utterance.onstart = () => log('✅ Basic audio: Started');
+                utterance.onend = () => log('✅ Basic audio: Completed');
+                utterance.onerror = (e) => log(`❌ Basic audio: Error - ${e.error}`);
+                speechSynthesis.speak(utterance);
+            } else {
+                log('❌ Speech synthesis not supported');
+                updateStatus('❌ Trình duyệt không hỗ trợ Speech API', 'error');
+            }
+        }
+
+        // Test giọng Việt
+        function testVietnameseVoice() {
+            log('🇻🇳 Testing Vietnamese voice...');
+            
+            const utterance = new SpeechSynthesisUtterance('Xin chào, đây là test giọng tiếng Việt');
+            utterance.lang = 'vi-VN';
+            utterance.rate = 0.8;
+            
+            // Tìm giọng Việt
+            const voices = speechSynthesis.getVoices();
+            const vietnameseVoice = voices.find(voice => 
+                voice.lang.includes('vi') || voice.name.toLowerCase().includes('vietnam')
+            );
+            
+            if (vietnameseVoice) {
+                utterance.voice = vietnameseVoice;
+                log(`✅ Found Vietnamese voice: ${vietnameseVoice.name}`);
+            } else {
+                log('⚠️ No Vietnamese voice found, using default');
+            }
+            
+            utterance.onstart = () => log('🔊 Vietnamese test: Started');
+            utterance.onend = () => log('✅ Vietnamese test: Completed');
+            utterance.onerror = (e) => log(`❌ Vietnamese test: Error - ${e.error}`);
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // Test tiếng gõ cửa
+        function testKnockSound() {
+            log('🚪 Testing knock sound...');
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const times = [0, 0.15, 0.3];
+                times.forEach(startTime => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(150, audioContext.currentTime + startTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + startTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime + startTime);
+                    oscillator.stop(audioContext.currentTime + startTime + 0.1);
+                });
+                
+                log('✅ Knock sound: Playing...');
+            } catch (error) {
+                log(`❌ Knock sound: Error - ${error.message}`);
+            }
+        }
+
+        // Test thông báo thực tế (copy từ hệ thống chính)
+        function testRealAnnouncement() {
+            log('📢 Testing real announcement...');
+            announceNumber('1001', '1', false);
+        }
+
+        // Hàm announceNumber (copy từ hệ thống chính)
+        function announceNumber(number, counterNumber, isRecall = false) {
+            try {
+                log(`🎤 announceNumber called: số ${number}, quầy ${counterNumber}${isRecall ? ' (Recall)' : ''}`);
+                
+                if (speechSynthesis.speaking) {
+                    log('⏸️ Speech already in progress, skipping');
+                    return;
+                }
+                
+                const message = isRecall 
+                    ? `Gọi lại, xin kính mời quý khách có số thứ tự ${number} đến quầy số ${counterNumber} để thực hiện thủ tục hành chính`
+                    : `Xin kính mời quý khách có số thứ tự ${number} đến quầy số ${counterNumber} để thực hiện thủ tục hành chính`;
+                
+                log(`📢 Message: ${message}`);
+                
+                const utterance = new SpeechSynthesisUtterance(message);
+                utterance.lang = 'vi-VN';
+                utterance.rate = 0.6;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                
+                // Tìm giọng Việt tốt nhất
+                const voices = speechSynthesis.getVoices();
+                const vietnameseVoice = voices.find(voice => 
+                    voice.lang === 'vi-VN' || 
+                    voice.name.toLowerCase().includes('mai') ||
+                    voice.name.toLowerCase().includes('linh')
+                ) || voices.find(voice => voice.lang.includes('vi'));
+                
+                if (vietnameseVoice) {
+                    utterance.voice = vietnameseVoice;
+                    log(`✅ Using voice: ${vietnameseVoice.name}`);
+                } else {
+                    log('⚠️ No Vietnamese voice, using default');
+                }
+                
+                utterance.onstart = () => log('🔊 Announcement started');
+                utterance.onend = () => log('✅ Announcement completed');
+                utterance.onerror = (e) => log(`❌ Announcement error: ${e.error}`);
+                
+                speechSynthesis.speak(utterance);
+                
+            } catch (error) {
+                log(`❌ announceNumber error: ${error.message}`);
+                testKnockSound(); // Fallback
+            }
+        }
+
+        // Simulate tạo lệnh gọi mới
+        function simulateNewCall() {
+            const service = document.getElementById('serviceSelect').value;
+            const counterNumber = serviceToCounter[service];
+            const randomNumber = Math.floor(Math.random() * 1000) + 1000;
+            
+            log(`🆕 Simulating new call: ${randomNumber} for ${service} (Counter ${counterNumber})`);
+            
+            // Gọi trực tiếp hàm phát âm
+            announceNumber(randomNumber.toString(), counterNumber, false);
+            
+            // Giả lập update lastKnownCalls
+            lastKnownCalls[service] = {
+                number: randomNumber.toString(),
+                time: new Date().toISOString()
+            };
+        }
+
+        function simulateRecall() {
+            const service = document.getElementById('serviceSelect').value;
+            const counterNumber = serviceToCounter[service];
+            const lastCall = lastKnownCalls[service];
+            
+            if (lastCall) {
+                log(`🔄 Simulating recall: ${lastCall.number} for ${service} (Counter ${counterNumber})`);
+                announceNumber(lastCall.number, counterNumber, true);
+            } else {
+                log('⚠️ No previous call to recall');
+                // Tạo số mẫu để gọi lại
+                announceNumber('1001', counterNumber, true);
+            }
+        }
+
+        // Monitor lệnh gọi thực tế
+        function startMonitoring() {
+            if (isMonitoring) {
+                log('⚠️ Monitoring already started');
+                return;
+            }
+            
+            isMonitoring = true;
+            document.getElementById('monitorStatus').innerHTML = '🟢 Monitor: Đang chạy';
+            document.getElementById('monitorStatus').className = 'status success';
+            
+            log('▶️ Started monitoring real calls...');
+            
+            monitorInterval = setInterval(checkForNewCalls, 2000);
+        }
+
+        function stopMonitoring() {
+            if (!isMonitoring) {
+                log('⚠️ Monitoring not running');
+                return;
+            }
+            
+            isMonitoring = false;
+            clearInterval(monitorInterval);
+            
+            document.getElementById('monitorStatus').innerHTML = '🔴 Monitor: Đã dừng';
+            document.getElementById('monitorStatus').className = 'status error';
+            
+            log('⏹️ Stopped monitoring');
+        }
+
+        // Kiểm tra lệnh gọi mới (copy từ hệ thống chính)
+        function checkForNewCalls() {
+            fetch('/latest-calls')
+                .then(res => res.json())
+                .then(latestCalls => {
+                    log('📡 Checking for new calls...');
+                    
+                    for (const service in latestCalls) {
+                        const latestCall = latestCalls[service];
+                        if (latestCall && latestCall.number) {
+                            const lastKnown = lastKnownCalls[service];
+                            
+                            // Kiểm tra lệnh gọi mới
+                            if (!lastKnown || 
+                                lastKnown.number !== latestCall.number || 
+                                lastKnown.time !== latestCall.time) {
+                                
+                                log(`🆕 NEW CALL DETECTED: ${latestCall.number} for ${service}!`);
+                                
+                                const counterNumber = serviceToCounter[service];
+                                if (counterNumber) {
+                                    log(`🔔 Playing announcement: ${latestCall.number} - Counter ${counterNumber}${latestCall.isRecall ? ' (Recall)' : ''}`);
+                                    announceNumber(latestCall.number, counterNumber, latestCall.isRecall || false);
+                                    
+                                    updateStatus(`🔊 Đang phát: Số ${latestCall.number} - Quầy ${counterNumber}`, 'success');
+                                }
+                                
+                                // Cập nhật tracking
+                                lastKnownCalls[service] = {
+                                    number: latestCall.number,
+                                    time: latestCall.time
+                                };
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    log(`❌ Error checking calls: ${error.message}`);
+                });
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '<div>🗑️ Logs cleared</div>';
+        }
+
+        // Kiểm tra thông tin hệ thống
+        function checkSystemInfo() {
+            const userAgent = navigator.userAgent;
+            const isWindows = userAgent.includes('Windows');
+            const isChrome = userAgent.includes('Chrome');
+            const isEdge = userAgent.includes('Edge');
+            
+            const voices = speechSynthesis.getVoices();
+            const vietnameseVoices = voices.filter(voice => 
+                voice.lang.includes('vi') || voice.name.toLowerCase().includes('vietnam')
+            );
+            
+            const audioContext = window.AudioContext || window.webkitAudioContext;
+            
+            const info = `
+                <div><strong>🖥️ Browser:</strong> ${isChrome ? 'Chrome' : isEdge ? 'Edge' : 'Other'}</div>
+                <div><strong>💻 OS:</strong> ${isWindows ? 'Windows' : 'Other'}</div>
+                <div><strong>🎤 Speech API:</strong> ${'speechSynthesis' in window ? '✅ Supported' : '❌ Not supported'}</div>
+                <div><strong>🔊 Audio API:</strong> ${audioContext ? '✅ Supported' : '❌ Not supported'}</div>
+                <div><strong>📊 Total voices:</strong> ${voices.length}</div>
+                <div><strong>🇻🇳 Vietnamese voices:</strong> ${vietnameseVoices.length}</div>
+                ${vietnameseVoices.length > 0 ? 
+                    '<div><strong>📋 Vietnamese voices:</strong><br>' + 
+                    vietnameseVoices.map(v => `&nbsp;&nbsp;• ${v.name} (${v.lang})`).join('<br>') + 
+                    '</div>' : 
+                    '<div style="color: red;"><strong>⚠️ Không có giọng tiếng Việt!</strong></div>'
+                }
+            `;
+            
+            document.getElementById('systemInfo').innerHTML = info;
+            
+            if (vietnameseVoices.length === 0) {
+                updateStatus('⚠️ Hệ thống thiếu giọng tiếng Việt', 'warning');
+            } else {
+                updateStatus('✅ Hệ thống âm thanh sẵn sàng', 'success');
+            }
+        }
+
+        // Khởi tạo
+        window.onload = function() {
+            log('🚀 System initialized');
+            
+            // Load voices và check system
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = checkSystemInfo;
+            }
+            
+            setTimeout(checkSystemInfo, 1000);
+            
+            updateStatus('✅ Hệ thống test đã sẵn sàng', 'success');
+        };
+    </script>
+</body>
+</html>

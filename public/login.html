@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng nhập nhân viên</title>
+  <style>
+    body { font-family: Arial; background: #f8f8f8; }
+    form { margin: 50px auto; width: 320px; padding: 30px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
+    input { margin: 10px 0; padding: 8px; width: 100%; box-sizing: border-box; }
+    button { padding: 10px 20px; width: 100%; background: #1976d2; color: #fff; border: none; border-radius: 4px; font-size: 16px; }
+    button:hover { background: #1565c0; }
+    #error { color: red; margin-top: 10px; min-height: 24px; text-align: center; }
+    h2 { text-align: center; }
+  </style>
+</head>
+<body>
+  <form onsubmit="return login(event)">
+    <h2>Đăng nhập nhân viên</h2>
+    <input id="username" placeholder="Tên đăng nhập" autocomplete="username" required>
+    <input id="password" type="password" placeholder="Mật khẩu" autocomplete="current-password" required>
+    <button type="submit">Đăng nhập</button>
+    <div id="error"></div>
+  </form>
+  <script>
+    function login(e) {
+      e.preventDefault();
+      document.getElementById('error').innerText = '';
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      // Kiểm tra nếu là admin
+      if (username.toLowerCase() === 'admin') {
+        // Đối với admin, chuyển thẳng đến trang admin-advanced
+        if (password) { // Chỉ cần có mật khẩu
+          localStorage.setItem('userType', 'admin');
+          localStorage.setItem('username', username);
+          window.location = 'admin-advanced.html';
+          return;
+        } else {
+          document.getElementById('error').innerText = 'Vui lòng nhập mật khẩu';
+          return;
+        }
+      }
+      
+      // Đối với staff, sử dụng API đăng nhập hiện tại
+      fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          password: password
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Sai tài khoản hoặc mật khẩu');
+        return res.json();
+      })
+      .then(data => {
+        localStorage.setItem('userType', 'staff');
+        localStorage.setItem('service', data.service);
+        localStorage.setItem('username', username);
+        
+        // Kiểm tra nếu là admin thì chuyển đến trang admin
+        if (data.service === 'admin') {
+          localStorage.setItem('userType', 'admin');
+          window.location = 'admin-advanced.html';
+        } else {
+          window.location = 'staff.html';
+        }
+      })
+      .catch(() => {
+        document.getElementById('error').innerText = 'Sai tài khoản hoặc mật khẩu';
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lấy số thứ tự dịch vụ</title>
+  <style>
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    margin: 0; 
+    padding: 10px; 
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .main-container {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px 25px;
+    border-radius: 20px;
+    box-shadow: 
+      0 8px 32px rgba(0,0,0,0.12),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+    max-width: 60vw;
+    max-height: 90vh;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 70vh;
+  }
+  
+  .logo-box { 
+    text-align: center; 
+    margin-bottom: 15px; 
+    flex-shrink: 0;
+  }
+  .logo-box img { 
+    width: min(400px, 40vw); 
+    height: auto;
+    max-height: 15vh;
+    object-fit: contain;
+    border-radius: 12px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+  }
+  
+  h2 { 
+    text-align: center; 
+    margin-bottom: 20px; 
+    color: #ffffff; 
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    line-height: 1.3;
+    flex-shrink: 0;
+  }
+
+  .buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  
+  button { 
+    margin: 6px 0; 
+    padding: clamp(12px, 2vh, 20px) clamp(18px, 2.5vw, 30px); 
+    font-size: clamp(14px, 2.2vh, 18px); 
+    border-radius: 12px; 
+    border: none; 
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff; 
+    cursor: pointer; 
+    width: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 700;
+    box-shadow: 
+      0 4px 15px rgba(102, 126, 234, 0.3),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+    position: relative;
+    overflow: hidden;
+    line-height: 1.4;
+    min-height: 40px;
+  }
+  
+  button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  button:hover::before {
+    left: 100%;
+  }
+  
+  button:hover { 
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 8px 25px rgba(102, 126, 234, 0.4),
+      inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+    #result { 
+    margin-top: 15px; 
+    padding: 12px 15px; 
+    font-size: clamp(14px, 2vh, 18px);
+    color: #ffffff; 
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+  
+  #modal {
+    display: none; 
+    position: fixed; 
+    left: 0; 
+    top: 0; 
+    width: 100vw; 
+    height: 100vh;
+    background: rgba(0,0,0,0.5); 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+  }
+  
+  #modal-content {
+    background: rgba(255, 255, 255, 0.95); 
+    backdrop-filter: blur(20px);
+    padding: 30px; 
+    border-radius: 20px; 
+    text-align: center;
+    min-width: 350px;
+    max-width: 85%;
+    box-shadow: 
+      0 20px 60px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+    animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-50px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  #modal-message { 
+    font-size: 16px; 
+    margin-bottom: 25px; 
+    color: #2c3e50;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  
+  #modal button { 
+    margin: 8px 10px; 
+    padding: 10px 25px; 
+    font-size: 14px; 
+    border-radius: 10px; 
+    border: none; 
+    cursor: pointer; 
+    font-weight: 600;
+    min-width: 90px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .btn-confirm {
+    background: linear-gradient(135deg, #27ae60, #219a52) !important;
+    color: #fff !important;
+  }
+  
+  .btn-confirm:hover {
+    background: linear-gradient(135deg, #219a52, #1e8449) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(39,174,96,0.3);
+  }
+  
+  .btn-cancel {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: #fff !important;
+  }
+  
+  .btn-cancel:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231,76,60,0.3);
+  }
+  
+  @media (max-width: 600px) {
+    .main-container {
+      padding: 15px 20px;
+      margin: 10px;
+      max-width: 95%;
+      min-height: 80vh;
+    }
+    
+    .logo-box img {
+      width: min(300px, 50vw);
+      max-height: 12vh;
+    }
+    
+    button { 
+      font-size: clamp(11px, 2vh, 14px);
+      padding: clamp(8px, 1.2vh, 12px) clamp(12px, 3vw, 18px);
+      margin: 4px 0;
+    }
+    
+    #modal-content { 
+      min-width: 80%;
+      padding: 20px 15px;
+    }
+    
+    .logo-box img { 
+      width: 240px; 
+      height: 75px; 
+    }
+    
+    h2 { 
+      font-size: 1.3rem;
+      margin-bottom: 15px; 
+    }
+    
+    #modal button {
+      width: 45%;
+      margin: 6px 2%;
+      font-size: 13px;
+    }
+  }
+  
+  /* Tối ưu đặc biệt cho 16:9 */
+  @media screen and (aspect-ratio: 16/9) {
+    body {
+      overflow: hidden;
+    }
+    
+    .main-container {
+      max-height: 80vh;
+      padding: 25px 30px;
+    }
+    
+    .logo-box img {
+      width: 280px;
+      height: 90px;
+    }
+    
+    h2 {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      margin: 6px 0;
+      padding: 10px 18px;
+      font-size: 13px;
+    }
+    
+    #result {
+      margin-top: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+  }
+  
+  /* Tối ưu cho màn hình 16:9 */
+  @media screen and (aspect-ratio: 16/9) {
+    .main-container {
+      max-width: 55vw;
+      min-height: 75vh;
+      padding: 2vh 3vw;
+    }
+    
+    .buttons-container {
+      max-height: 45vh;
+    }
+  }
+
+  /* Màn hình lớn 16:9 */
+  @media screen and (min-width: 1280px) and (aspect-ratio: 16/9) {
+    .main-container {
+      max-width: 50vw;
+      min-height: 70vh;
+    }
+    
+    .logo-box img {
+      width: min(350px, 35vw);
+      max-height: 12vh;
+    }
+  }
+  
+  @media screen and (min-width: 1280px) and (max-width: 1920px) and (min-height: 720px) and (max-height: 1080px) {
+    .main-container {
+      max-width: 450px;
+      padding: 28px 32px;
+    }
+    
+    .logo-box img {
+      width: 300px;
+      height: 95px;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+    }
+    
+    button {
+      font-size: 14px;
+      padding: 11px 18px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="logo-box">
+      <img src="logo.png" alt="Logo Trung tâm">
+    </div>
+    <h2>Chọn dịch vụ để lấy số thứ tự</h2>
+    <div class="buttons-container">
+      <button onclick="getNumber('Chứng thực - Hộ tịch')">Chứng thực - Hộ tịch</button>
+      <button onclick="getNumber('Văn thư')">Văn thư</button>
+      <button onclick="getNumber('Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội')">Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội</button>
+      <button onclick="getNumber('Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương')">Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương</button>
+    </div>
+    <div id="result"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal">
+    <div id="modal-content">
+      <div id="modal-message"></div>
+      <button onclick="confirmRegister()">Đồng ý</button>
+      <button onclick="closeModal()">Hủy</button>
+    </div>
+  </div>
+
+  <script>
+    let lastService = '';
+    let lastNumber = '';
+
+    function getNumber(service) {
+      fetch('/get-number', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Lỗi lấy số');
+        return res.json();
+      })
+      .then(data => {
+        lastService = service;
+        lastNumber = data.number;
+        showModal(`Số thứ tự của bạn là <b>${data.number}</b><br>Thuộc lĩnh vực <b>${service}</b><br>Bạn xác nhận đăng ký chứ?`);
+      })
+      .catch(() => {
+        document.getElementById('result').innerText = 'Có lỗi xảy ra!';
+      });
+    }
+
+    function showModal(message) {
+      document.getElementById('modal-message').innerHTML = message;
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    function confirmRegister() {
+      document.getElementById('result').innerText =
+        `Bạn đã đăng ký thành công số ${lastNumber} cho lĩnh vực "${lastService}".`;
+      closeModal();
+    }
+  </script>
+</body>
+</html>

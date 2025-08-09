@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra âm thanh</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Kiểm tra tính năng âm thanh</h1>
+        
+        <div id="status"></div>
+        
+        <h3>1. Kiểm tra Web Speech API</h3>
+        <button onclick="testSpeechAPI()">🎤 Test Speech API</button>
+        <button onclick="testVietnamese()">🇻🇳 Test tiếng Việt</button>
+        
+        <h3>2. Kiểm tra Web Audio API</h3>
+        <button onclick="testAudioAPI()">🔔 Test Audio API (Tiếng beep)</button>
+        <button onclick="testKnockSound()">🚪 Test tiếng gõ cửa</button>
+        
+        <h3>3. Danh sách giọng nói có sẵn</h3>
+        <button onclick="listVoices()">📋 Hiển thị tất cả giọng nói</button>
+        <div id="voiceList"></div>
+        
+        <h3>4. Test thông báo thực tế</h3>
+        <button onclick="testRealAnnouncement()">📢 Test thông báo số thứ tự</button>
+        
+        <h3>5. Nhật ký kiểm tra</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        function updateStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+
+        // Test 1: Web Speech API cơ bản
+        function testSpeechAPI() {
+            log('🧪 Kiểm tra Web Speech API...');
+            
+            if ('speechSynthesis' in window) {
+                log('✅ Web Speech API được hỗ trợ', 'success');
+                
+                const utterance = new SpeechSynthesisUtterance('Hello World');
+                utterance.onstart = () => log('🔊 Bắt đầu phát âm', 'success');
+                utterance.onend = () => log('✅ Phát âm hoàn thành', 'success');
+                utterance.onerror = (e) => log(`❌ Lỗi phát âm: ${e.error}`, 'error');
+                
+                speechSynthesis.speak(utterance);
+            } else {
+                log('❌ Trình duyệt không hỗ trợ Web Speech API', 'error');
+                updateStatus('❌ Trình duyệt không hỗ trợ Text-to-Speech', true);
+            }
+        }
+
+        // Test 2: Tiếng Việt
+        function testVietnamese() {
+            log('🧪 Kiểm tra tiếng Việt...');
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('Xin chào, đây là thử nghiệm tiếng Việt');
+                utterance.lang = 'vi-VN';
+                utterance.rate = 0.8;
+                utterance.pitch = 1.0;
+                
+                // Tìm giọng tiếng Việt
+                const voices = speechSynthesis.getVoices();
+                const vietnameseVoice = voices.find(voice => 
+                    voice.lang.includes('vi') || voice.name.toLowerCase().includes('vietnam')
+                );
+                
+                if (vietnameseVoice) {
+                    utterance.voice = vietnameseVoice;
+                    log(`✅ Sử dụng giọng: ${vietnameseVoice.name}`, 'success');
+                } else {
+                    log('⚠️ Không tìm thấy giọng tiếng Việt, sử dụng mặc định');
+                }
+                
+                utterance.onstart = () => log('🔊 Phát tiếng Việt...', 'success');
+                utterance.onend = () => log('✅ Hoàn thành tiếng Việt', 'success');
+                utterance.onerror = (e) => log(`❌ Lỗi tiếng Việt: ${e.error}`, 'error');
+                
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Test 3: Web Audio API
+        function testAudioAPI() {
+            log('🧪 Kiểm tra Web Audio API...');
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                log('✅ Web Audio API được hỗ trợ', 'success');
+                
+                // Tạo tiếng beep đơn giản
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                log('🔔 Phát tiếng beep...', 'success');
+                
+            } catch (error) {
+                log(`❌ Lỗi Web Audio API: ${error.message}`, 'error');
+                updateStatus('❌ Không thể phát âm thanh hiệu ứng', true);
+            }
+        }
+
+        // Test 4: Tiếng gõ cửa (giống hệ thống)
+        function testKnockSound() {
+            log('🧪 Test tiếng gõ cửa...');
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Tạo 3 tiếng "gõ" liên tiếp
+                const times = [0, 0.15, 0.3];
+                
+                times.forEach(startTime => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    // Tần số thấp giống tiếng gõ cửa
+                    oscillator.frequency.setValueAtTime(150, audioContext.currentTime + startTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + startTime + 0.1);
+                    
+                    // Âm lượng nhanh lên rồi nhanh xuống
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime + startTime);
+                    oscillator.stop(audioContext.currentTime + startTime + 0.1);
+                });
+                
+                log('🚪 Phát tiếng gõ cửa...', 'success');
+                
+            } catch (error) {
+                log(`❌ Lỗi tiếng gõ cửa: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 5: Liệt kê giọng nói
+        function listVoices() {
+            log('🧪 Liệt kê giọng nói có sẵn...');
+            
+            const voices = speechSynthesis.getVoices();
+            const voiceListDiv = document.getElementById('voiceList');
+            
+            if (voices.length === 0) {
+                voiceListDiv.innerHTML = '<p class="error">⚠️ Chưa tải được danh sách giọng nói. Hãy thử lại sau 1-2 giây.</p>';
+                // Thử lại sau khi voices loaded
+                setTimeout(listVoices, 1000);
+                return;
+            }
+            
+            let html = '<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-top: 10px;">';
+            
+            voices.forEach((voice, index) => {
+                const isVietnamese = voice.lang.includes('vi') || voice.name.toLowerCase().includes('vietnam') || voice.name.toLowerCase().includes('mai') || voice.name.toLowerCase().includes('linh');
+                const style = isVietnamese ? 'background: #e7f5e7; font-weight: bold;' : '';
+                
+                html += `<div style="${style} padding: 5px; border-bottom: 1px solid #eee;">
+                    <strong>${index + 1}. ${voice.name}</strong> 
+                    <br>Ngôn ngữ: ${voice.lang} 
+                    <br>Loại: ${voice.localService ? 'Offline' : 'Online'}
+                    ${isVietnamese ? ' <span style="color: green;">🇻🇳 TIẾNG VIỆT</span>' : ''}
+                    <button onclick="testVoice(${index})" style="float: right; padding: 2px 8px; font-size: 12px;">Test</button>
+                </div>`;
+            });
+            
+            html += '</div>';
+            voiceListDiv.innerHTML = html;
+            
+            const vietnameseVoices = voices.filter(v => v.lang.includes('vi') || v.name.toLowerCase().includes('vietnam'));
+            log(`📋 Tìm thấy ${voices.length} giọng nói, trong đó ${vietnameseVoices.length} giọng tiếng Việt`, 'success');
+        }
+
+        // Test giọng nói cụ thể
+        function testVoice(index) {
+            const voices = speechSynthesis.getVoices();
+            const voice = voices[index];
+            
+            log(`🎤 Test giọng: ${voice.name} (${voice.lang})`);
+            
+            const utterance = new SpeechSynthesisUtterance('Xin chào, tôi là giọng nói số ' + (index + 1));
+            utterance.voice = voice;
+            utterance.rate = 0.8;
+            
+            utterance.onstart = () => log(`🔊 Phát bằng ${voice.name}`, 'success');
+            utterance.onend = () => log(`✅ Hoàn thành ${voice.name}`, 'success');
+            utterance.onerror = (e) => log(`❌ Lỗi ${voice.name}: ${e.error}`, 'error');
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // Test 6: Thông báo thực tế
+        function testRealAnnouncement() {
+            log('🧪 Test thông báo thực tế...');
+            
+            const message = 'Xin kính mời quý khách có số thứ tự... 1001... Đến quầy số... 1... Để thực hiện thủ tục hành chính';
+            
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'vi-VN';
+            utterance.rate = 0.6;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Tìm giọng tiếng Việt tốt nhất
+            const voices = speechSynthesis.getVoices();
+            const vietnameseVoice = voices.find(voice => 
+                voice.lang === 'vi-VN' || 
+                voice.name.toLowerCase().includes('mai') ||
+                voice.name.toLowerCase().includes('linh')
+            ) || voices.find(voice => voice.lang.includes('vi'));
+            
+            if (vietnameseVoice) {
+                utterance.voice = vietnameseVoice;
+                log(`✅ Sử dụng giọng: ${vietnameseVoice.name}`, 'success');
+            }
+            
+            utterance.onstart = () => log('📢 Bắt đầu thông báo...', 'success');
+            utterance.onend = () => log('✅ Thông báo hoàn thành', 'success');
+            utterance.onerror = (e) => log(`❌ Lỗi thông báo: ${e.error}`, 'error');
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // Kiểm tra tự động khi tải trang
+        window.onload = function() {
+            log('🚀 Bắt đầu kiểm tra hệ thống âm thanh...');
+            
+            // Kiểm tra hỗ trợ cơ bản
+            if ('speechSynthesis' in window) {
+                log('✅ Web Speech API có sẵn', 'success');
+                updateStatus('✅ Hệ thống âm thanh sẵn sàng');
+            } else {
+                log('❌ Trình duyệt không hỗ trợ Web Speech API', 'error');
+                updateStatus('❌ Trình duyệt không hỗ trợ âm thanh', true);
+            }
+            
+            if ('AudioContext' in window || 'webkitAudioContext' in window) {
+                log('✅ Web Audio API có sẵn', 'success');
+            } else {
+                log('❌ Trình duyệt không hỗ trợ Web Audio API', 'error');
+            }
+            
+            // Tự động tải danh sách giọng nói
+            setTimeout(() => {
+                if (speechSynthesis.getVoices().length > 0) {
+                    listVoices();
+                } else {
+                    log('⏳ Đang tải danh sách giọng nói...');
+                    speechSynthesis.addEventListener('voiceschanged', listVoices, { once: true });
+                }
+            }, 500);
+        };
+    </script>
+</body>
+</html>

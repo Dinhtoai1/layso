@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhân viên - Quản lý thủ tục</title>
+  <style>
+    body { font-family: Arial; }
+    #main { display: none; }
+    #next-result { margin-top: 20px; font-size: 18px; color: green; }
+    table { margin-top: 30px; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px 16px; }
+    th { background: #eee; }
+    #logout { margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <h2 id="welcome"></h2>
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <button id="call-btn" onclick="callNext()" style="flex: 2; padding: 12px 20px; background: #1976d2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+        📞 Gọi khách tiếp theo
+      </button>
+      <button onclick="recallLast()" style="flex: 1; padding: 12px 20px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+        🔄 Gọi lại
+      </button>
+    </div>
+    <div id="next-result"></div>
+
+    <!-- Phần đánh giá mức độ hài lòng -->
+    <div style="margin: 30px 0; padding: 20px; background: #f0f8ff; border-radius: 8px; border: 2px solid #1976d2;">
+      <h3 style="color: #1976d2; margin-top: 0;">Đánh giá mức độ hài lòng</h3>
+      <p>Thu thập đánh giá từ khách hàng sau khi hoàn thành thủ tục:</p>
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button onclick="openRatingPage()" style="flex: 1; padding: 12px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+          📋 Mở trang đánh giá
+        </button>
+      </div>
+      <p style="font-size: 12px; color: #666; margin-bottom: 0;">Trang đánh giá sẽ tự động áp dụng cho lĩnh vực "<span id="serviceInLink"></span>"</p>
+    </div>
+
+    <!-- Phần hiển thị số thứ tự -->
+    <div style="margin: 30px 0; padding: 20px; background: #fff3e0; border-radius: 8px; border: 2px solid #ff9800;">
+      <h3 style="color: #ff9800; margin-top: 0;">Hiển thị số thứ tự</h3>
+      <p>Mở màn hình hiển thị số thứ tự cho khách hàng xem:</p>
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button onclick="openNumberDisplay()" style="flex: 1; padding: 12px 20px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+          📺 Mở màn hình hiển thị
+        </button>
+        <button onclick="openAllCountersDisplay()" style="flex: 1; padding: 12px 20px; background: #673ab7; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+          🏢 Tất cả quầy
+        </button>
+      </div>
+      <p style="font-size: 12px; color: #666; margin-bottom: 0;">Màn hình sẽ hiển thị số vừa gọi và danh sách các số gần đây</p>
+    </div>
+
+    <h2>Thống kê hàng đợi</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Lĩnh vực</th>
+          <th>Đang chờ</th>
+          <th>Số đã gọi gần nhất</th>
+        </tr>
+      </thead>
+      <tbody id="stats-body"></tbody>
+    </table>
+    <button id="logout" onclick="logout()">Đăng xuất</button>
+  </div>
+  <script>
+    // Kiểm tra đăng nhập
+    let service = localStorage.getItem('service');
+    if (!service) {
+      window.location = 'login.html';
+    } else {
+      document.getElementById('main').style.display = 'block';
+      document.getElementById('welcome').innerText = `Xin chào nhân viên lĩnh vực "${service}"`;
+      document.getElementById('call-btn').innerText = `Gọi tiếp lĩnh vực "${service}"`;
+      
+      // Hiển thị tên lĩnh vực trong phần đánh giá
+      document.getElementById('serviceInLink').textContent = service;
+      
+      loadStats();
+      setInterval(loadStats, 5000);
+    }
+
+    function callNext() {
+      fetch('/call-next', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Không còn khách chờ');
+        return res.json();
+      })
+      .then(async (data) => {
+        const message = `Đã gọi số ${data.number} cho lĩnh vực "${service}".`;
+        document.getElementById('next-result').innerText = message;
+        
+        // Gửi thông báo đến popup hiển thị (nếu đang mở)
+        if (window.displayWindow && !window.displayWindow.closed) {
+          window.displayWindow.postMessage({
+            type: 'NEW_CALL',
+            number: data.number,
+            service: service
+          }, '*');
+        }
+        
+        loadStats();
+      })
+      .catch(() => {
+        document.getElementById('next-result').innerText =
+          `Không còn khách chờ ở lĩnh vực "${service}".`;
+        loadStats();
+      });
+    }
+
+    function recallLast() {
+      fetch('/recall-last', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Không thể gọi lại');
+        return res.json();
+      })
+      .then((data) => {
+        const message = `Đã gọi lại số ${data.number} cho lĩnh vực "${service}".`;
+        document.getElementById('next-result').innerText = message;
+        
+        // Gửi thông báo đến popup hiển thị (nếu đang mở)
+        if (window.displayWindow && !window.displayWindow.closed) {
+          window.displayWindow.postMessage({
+            type: 'NEW_CALL',
+            number: data.number,
+            service: service
+          }, '*');
+        }
+        
+        loadStats();
+      })
+      .catch((error) => {
+        console.error('Error in recallLast:', error);
+        document.getElementById('next-result').innerText = 
+          `Không thể gọi lại số ở lĩnh vực "${service}".`;
+        loadStats();
+      });
+    }
+
+    function openRatingPage() {
+      const params = new URLSearchParams({ service: service });
+      window.open(`popup.html?${params.toString()}`, 'ratingPopup', 'width=800,height=700,scrollbars=yes,resizable=yes');
+    }
+
+    function openNumberDisplay() {
+      window.displayWindow = window.open('number-display.html', 'numberDisplay', 'width=1200,height=900,scrollbars=yes,resizable=yes');
+    }
+
+    function openAllCountersDisplay() {
+      window.displayWindow = window.open('all-counters-display.html', 'allCountersDisplay', 'width=1600,height=1000,scrollbars=yes,resizable=yes');
+    }
+
+    function loadStats() {
+      fetch('/stats')
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('stats-body');
+          tbody.innerHTML = '';
+          for (let s in data) {
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = s;
+            row.insertCell(1).innerText = data[s].waiting;
+            row.insertCell(2).innerText = data[s].lastCalled || 'Chưa có';
+          }
+        });
+    }
+
+    function logout() {
+      localStorage.removeItem('service');
+      window.location = 'login.html';
+    }
+  </script>
+</body>
+</html>

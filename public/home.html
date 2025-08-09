@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang chủ - Hệ thống lấy số thứ tự</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      max-height: 100vh; /* Giới hạn chiều cao để tối ưu 16:9 */
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      position: relative;
+      overflow: hidden; /* Ngăn scroll để vừa 16:9 */
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .header {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 15px 0;
+      text-align: center;
+      z-index: 2;
+      position: relative;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+    
+    .main-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1;
+      min-height: 0;
+    }
+    
+    .logo-box { 
+      margin: 0;
+    }
+    
+    .logo-box img { 
+      width: 380px; 
+      height: 120px; 
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+      transition: transform 0.3s ease;
+    }
+    
+    .logo-box img:hover {
+      transform: scale(1.05);
+    }
+    
+    .container { 
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius: 25px;
+      box-shadow: 
+        0 25px 50px rgba(0,0,0,0.15),
+        0 0 0 1px rgba(255,255,255,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      padding: 35px 40px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      position: relative;
+      animation: fadeIn 0.8s ease-out;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #e91e63, #9c27b0, #3f51b5, #2196f3, #00bcd4);
+      border-radius: 25px 25px 0 0;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    h2 { 
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 30px;
+      background: linear-gradient(45deg, #e91e63, #9c27b0, #3f51b5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      background-size: 200% 200%;
+      animation: gradientShift 3s ease-in-out infinite;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    button { 
+      margin: 15px 0; 
+      padding: 16px 28px; 
+      font-size: 16px; 
+      font-weight: 600;
+      border-radius: 30px; 
+      border: none; 
+      background: linear-gradient(135deg, #1976d2, #1565c0, #0d47a1);
+      color: white; 
+      cursor: pointer; 
+      width: 100%;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 
+        0 6px 20px rgba(25, 118, 210, 0.3),
+        0 1px 3px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s ease;
+    }
+    
+    button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+      transition: all 0.3s ease;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+    }
+    
+    button:hover::before {
+      left: 100%;
+    }
+    
+    button:hover::after {
+      width: 300px;
+      height: 300px;
+    }
+    
+    button:hover { 
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 10px 30px rgba(25, 118, 210, 0.4),
+        0 5px 15px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      background: linear-gradient(135deg, #1e88e5, #1976d2, #1565c0);
+    }
+    
+    button:active {
+      transform: translateY(-1px) scale(1.01);
+      transition: all 0.1s ease;
+    }
+    
+    /* Responsive Design - Tối ưu cho 16:9 */
+    @media screen and (min-width: 1280px) and (max-width: 1920px) and (min-height: 720px) and (max-height: 1080px) {
+      .header {
+        padding: 12px 0;
+      }
+      
+      .logo-box img {
+        width: 350px;
+        height: 110px;
+      }
+      
+      .main-content {
+        padding: 15px 20px;
+      }
+      
+      .container {
+        max-width: 450px;
+        padding: 30px 35px;
+      }
+      
+      h2 {
+        font-size: 1.7rem;
+        margin-bottom: 25px;
+      }
+      
+      button {
+        margin: 12px 0;
+        padding: 15px 25px;
+        font-size: 15px;
+      }
+    }
+    
+    @media (max-aspect-ratio: 16/9) and (max-width: 1366px) {
+      .header {
+        padding: 10px 0;
+      }
+      
+      .logo-box img {
+        width: 300px;
+        height: 95px;
+      }
+      
+      .container {
+        max-width: 420px;
+        padding: 28px 32px;
+      }
+      
+      h2 {
+        font-size: 1.6rem;
+        margin-bottom: 22px;
+      }
+      
+      button {
+        margin: 10px 0;
+        padding: 14px 22px;
+        font-size: 14px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        padding: 8px 0;
+      }
+      
+      .main-content {
+        padding: 12px 15px;
+      }
+      
+      .container {
+        padding: 25px 25px;
+        max-width: 90%;
+      }
+      
+      .logo-box img {
+        width: 250px;
+        height: 80px;
+      }
+      
+      h2 {
+        font-size: 1.4rem;
+        margin-bottom: 20px;
+      }
+      
+      button {
+        padding: 13px 20px;
+        font-size: 13px;
+        margin: 8px 0;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .header {
+        padding: 6px 0;
+      }
+      
+      .main-content {
+        padding: 10px;
+      }
+      
+      .container {
+        padding: 20px 18px;
+      }
+      
+      .logo-box img {
+        width: 200px;
+        height: 65px;
+      }
+      
+      h2 {
+        font-size: 1.2rem;
+        margin-bottom: 18px;
+      }
+      
+      button {
+        padding: 12px 18px;
+        font-size: 12px;
+        border-radius: 20px;
+        margin: 6px 0;
+      }
+    }
+    
+    /* Đặc biệt tối ưu cho màn hình 16:9 standard */
+    @media screen and (aspect-ratio: 16/9) {
+      body {
+        max-height: 100vh;
+        overflow: hidden;
+      }
+      
+      .header {
+        padding: 10px 0;
+      }
+      
+      .logo-box img {
+        width: 320px;
+        height: 100px;
+      }
+      
+      .main-content {
+        padding: 10px 20px 20px;
+      }
+      
+      .container {
+        max-width: 400px;
+        padding: 25px 30px;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+      }
+      
+      button {
+        margin: 8px 0;
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with Logo -->
+  <div class="header">
+    <div class="logo-box">
+      <img src="logo.png" alt="Logo Trung tâm">
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <div class="container">
+      <h2>🏛️ Chọn đối tượng sử dụng</h2>
+      <button onclick="window.location='index.html'">
+        👥 Dành cho Công dân đến thực hiện Thủ tục hành chính
+      </button>
+      <button onclick="window.location='login.html'">
+        👨‍💼 Dành cho Công chức
+      </button>
+    </div>
+  </div>
+</body>
+</html>

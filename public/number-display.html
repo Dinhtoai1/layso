@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thông báo số thứ tự</title>
+  <style>
+  body { 
+    font-family: Arial, sans-serif; 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0; 
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .container { 
+    width: 90vw;
+    max-width: 800px;
+    background: white; 
+    border-radius: 20px; 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .header {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+    padding: 20px;
+    text-align: center;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  .header .time {
+    margin-top: 10px;
+    font-size: 16px;
+    opacity: 0.9;
+  }
+  .current-call {
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+  }
+  .current-call.active {
+    background: linear-gradient(135deg, #4caf50, #81c784);
+    color: white;
+  }
+  .current-call h2 {
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    color: #333;
+  }
+  .current-call.active h2 {
+    color: white;
+  }
+  .number-display {
+    font-size: 120px;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #1976d2;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  }
+  .current-call.active .number-display {
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+  }
+  .service-name {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #1976d2;
+  }
+  .current-call.active .service-name {
+    color: white;
+  }
+  .call-time {
+    font-size: 18px;
+    color: #666;
+    margin-top: 15px;
+  }
+  .current-call.active .call-time {
+    color: #e8f5e9;
+  }
+  .recent-calls {
+    padding: 30px;
+  }
+  .recent-calls h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 20px;
+    text-align: center;
+  }
+  .calls-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+  .call-item {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    border-left: 4px solid #1976d2;
+  }
+  .call-item .number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 5px;
+  }
+  .call-item .service {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  .call-item .time {
+    font-size: 12px;
+    color: #999;
+  }
+  .no-calls {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+  }
+  .status-bar {
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4caf50;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .refresh-animation {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 768px) {
+    .container {
+      width: 95vw;
+      margin: 10px;
+    }
+    .number-display {
+      font-size: 80px;
+    }
+    .service-name {
+      font-size: 24px;
+    }
+    .calls-list {
+      grid-template-columns: 1fr;
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔔 Thông báo số thứ tự</h1>
+      <div class="time" id="currentTime"></div>
+    </div>
+
+    <div class="current-call" id="currentCall">
+      <h2>Số thứ tự hiện tại</h2>
+      <div class="number-display" id="currentNumber">---</div>
+      <div class="service-name" id="currentService">Chưa có cuộc gọi</div>
+      <div class="call-time" id="currentCallTime"></div>
+    </div>
+
+    <div class="recent-calls">
+      <h3>📋 Các số đã gọi gần đây</h3>
+      <div class="calls-list" id="callsList">
+        <div class="no-calls">Chưa có dữ liệu</div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>Đang kết nối</span>
+      </div>
+      <div id="lastUpdate">Cập nhật: --:--</div>
+    </div>
+  </div>
+
+  <script>
+    let latestCallTime = null;
+
+    // Hàm phát âm thanh đơn giản như tiếng gõ cửa
+    function playKnockSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Tạo 3 tiếng "gõ" liên tiếp
+        const times = [0, 0.15, 0.3];
+        
+        times.forEach(startTime => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          // Tần số thấp giống tiếng gõ cửa
+          oscillator.frequency.setValueAtTime(150, audioContext.currentTime + startTime);
+          oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + startTime + 0.1);
+          
+          // Âm lượng nhanh lên rồi nhanh xuống
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.02);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + 0.1);
+          
+          oscillator.start(audioContext.currentTime + startTime);
+          oscillator.stop(audioContext.currentTime + startTime + 0.1);
+        });
+      } catch (error) {
+        console.log('Không thể phát âm thanh:', error);
+      }
+    }
+
+    // Hàm thông báo bằng giọng nói tiếng Việt Microsoft Mai
+    function announceNumber(number, service) {
+      try {
+        // Kiểm tra xem có thông báo nào đang phát không
+        if (speechSynthesis.speaking) {
+          console.log('⏸️ Đang có thông báo khác, bỏ qua lần này');
+          return;
+        }
+        
+        // Mapping service to counter number
+        const serviceToCounter = {
+          "Chứng thực - Hộ tịch": "1",
+          "Văn thư": "2",
+          "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
+          "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "4"
+        };
+        
+        const counterNumber = serviceToCounter[service] || "1";
+        
+        // Tạo câu thông báo với ngắt quãng rõ ràng
+                const message = `Xin kính mời quý khách có số thứ tự..... ${number}..... Đến quầy số..... ${service.counter}...... Để thực hiện thủ tục hành chính`;
+        
+        // Sử dụng Web Speech API với giọng Microsoft Mai
+        const utterance = new SpeechSynthesisUtterance(message);
+        
+        // Đợi tải danh sách giọng nói và chọn Microsoft Mai
+        if (speechSynthesis.getVoices().length === 0) {
+          speechSynthesis.addEventListener('voiceschanged', () => {
+            setVietnameseVoiceForNumberDisplay(utterance, message);
+          }, { once: true });
+        } else {
+          setVietnameseVoiceForNumberDisplay(utterance, message);
+        }
+        
+      } catch (error) {
+        console.log('Không thể phát thông báo giọng nói:', error);
+        // Fallback về tiếng gõ cửa nếu không thể phát giọng nói
+        playKnockSound();
+      }
+    }
+    
+    // Hàm hỗ trợ thiết lập giọng nói tiếng Việt (ưu tiên giọng nữ) cho number display
+    function setVietnameseVoiceForNumberDisplay(utterance, message) {
+      // Dừng tất cả giọng nói trước đó ngay lập tức
+      speechSynthesis.cancel();
+      
+      const voices = speechSynthesis.getVoices();
+      console.log('Danh sách tất cả giọng nói có sẵn (Number Display):');
+      voices.forEach((voice, index) => {
+        const genderInfo = voice.name.toLowerCase().includes('female') || 
+                          voice.name.toLowerCase().includes('woman') || 
+                          voice.name.toLowerCase().includes('mai') || 
+                          voice.name.toLowerCase().includes('linh') || 
+                          voice.name.toLowerCase().includes('yen') || 
+                          voice.name.toLowerCase().includes('hương') || 
+                          voice.name.toLowerCase().includes('lan') ? 'Female' : 'Unknown';
+        console.log(`${index}: ${voice.name} (${voice.lang}) - ${voice.localService ? 'Local' : 'Remote'} - Gender: ${genderInfo}`);
+      });
+      
+      // Lọc chỉ lấy giọng nói tiếng Việt
+      const vietnameseVoices = voices.filter(voice => 
+        voice.lang === 'vi-VN' || 
+        voice.lang === 'vi' || 
+        voice.lang.toLowerCase().includes('vi-vn') ||
+        voice.name.toLowerCase().includes('vietnam') ||
+        voice.name.toLowerCase().includes('mai') ||
+        voice.name.toLowerCase().includes('linh')
+      );
+      
+      console.log('�🇳 Chỉ giọng nói tiếng Việt (Number Display):', vietnameseVoices);
+      
+      // Thử tìm giọng nữ tiếng Việt theo thứ tự ưu tiên (5 cấp độ)
+      let selectedVoice = null;
+      
+      // 1. Ưu tiên cao nhất: Tên giọng nữ Việt Nam cụ thể
+      selectedVoice = vietnameseVoices.find(voice => 
+        voice.name.toLowerCase().includes('mai') ||
+        voice.name.toLowerCase().includes('linh') ||
+        voice.name.toLowerCase().includes('yen') ||
+        voice.name.toLowerCase().includes('hương') ||
+        voice.name.toLowerCase().includes('lan')
+      );
+      if (selectedVoice) {
+        console.log('🎯 Tìm thấy giọng nữ Việt Nam:', selectedVoice.name);
+      }
+      
+      // 2. Tìm giọng nữ có ngôn ngữ Việt Nam
+      if (!selectedVoice) {
+        selectedVoice = vietnameseVoices.find(voice => 
+          voice.name.toLowerCase().includes('female') ||
+          voice.name.toLowerCase().includes('woman')
+        );
+        if (selectedVoice) {
+          console.log('🎯 Tìm thấy giọng nữ tiếng Việt:', selectedVoice.name);
+        }
+      }
+      
+      // 3. Tìm BẤT KỲ giọng tiếng Việt nào
+      if (!selectedVoice && vietnameseVoices.length > 0) {
+        selectedVoice = vietnameseVoices[0];
+        console.log('🎯 Tìm thấy giọng tiếng Việt:', selectedVoice.name);
+      }
+      
+      // QUAN TRỌNG: Chỉ tiếp tục nếu có giọng tiếng Việt
+      if (!selectedVoice) {
+        console.log('❌ KHÔNG TÌM THẤY GIỌNG TIẾNG VIỆT - HỦY THÔNG BÁO (Number Display)');
+        return; // Dừng lại nếu không có giọng tiếng Việt
+      }
+      
+      // Thiết lập giọng nói
+      utterance.voice = selectedVoice;
+      console.log('✅ Đã chọn giọng nói tiếng Việt:', selectedVoice.name, '(' + selectedVoice.lang + ')');
+      
+      // Force set ngôn ngữ tiếng Việt và loại bỏ mọi khả năng tiếng Anh
+      utterance.lang = 'vi-VN';
+      
+      // Thiết lập các tham số (chậm hơn và cao hơn cho giọng nữ)
+      utterance.rate = 0.5; // Tốc độ nói rất chậm để rõ ràng hơn
+      utterance.pitch = 1.1; // Âm điệu cao hơn cho giọng nữ
+      utterance.volume = 1.0; // Âm lượng tối đa
+      
+      // Thêm event listeners để debug
+      utterance.onstart = () => console.log('🔊 Bắt đầu phát âm TIẾNG VIỆT (Number Display)');
+      utterance.onend = () => console.log('✅ Hoàn thành phát âm TIẾNG VIỆT (Number Display)');
+      utterance.onerror = (e) => console.log('❌ Lỗi phát âm (Number Display):', e);
+      
+      // ĐẢM BẢO CHỈ PHÁT TIẾNG VIỆT
+      speechSynthesis.cancel(); // Hủy tất cả trước đó
+      
+      // Thêm delay để đảm bảo voice selection hoàn toàn
+      setTimeout(() => {
+        // Kiểm tra lần cuối trước khi phát
+        if (utterance.voice && utterance.voice.lang.includes('vi')) {
+          console.log('🎯 Number Display: XÁC NHẬN Sẽ phát giọng', utterance.voice.name, utterance.voice.lang);
+          speechSynthesis.speak(utterance);
+        } else {
+          console.log('❌ Number Display: KHÔNG AN TOÀN - Hủy vì không phải tiếng Việt');
+        }
+      }, 200); // Tăng delay lên 200ms
+      
+      console.log('📢 Đã gửi lệnh phát thông báo (Number Display) với giọng tiếng Việt:', selectedVoice.name);
+    }
+
+    function updateCurrentTime() {
+      const now = new Date();
+      const timeString = now.toLocaleString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      document.getElementById('currentTime').textContent = timeString;
+    }
+
+    function formatTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    function formatDateTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    async function loadLatestCalls() {
+      try {
+        const response = await fetch('/latest-call');
+        const data = await response.json();
+        
+        if (data.success && data.calls.length > 0) {
+          const calls = data.calls;
+          const latestCall = calls[0];
+          
+          // Cập nhật số hiện tại
+          const currentCallDiv = document.getElementById('currentCall');
+          document.getElementById('currentNumber').textContent = latestCall.number;
+          document.getElementById('currentService').textContent = latestCall.service;
+          document.getElementById('currentCallTime').textContent = `Gọi lúc: ${formatTime(latestCall.time)}`;
+          
+          // Kiểm tra xem có cuộc gọi mới không
+          if (latestCallTime !== latestCall.time) {
+            latestCallTime = latestCall.time;
+            
+            // TẮT ÂM THANH CHO NUMBER DISPLAY - Chỉ hiển thị visual
+            console.log('📺 Number Display: Chỉ hiển thị thông tin, không phát âm thanh');
+            // announceNumber(latestCall.number, latestCall.service); // ĐÃ TẮT
+            
+            // Thêm hiệu ứng cho cuộc gọi mới
+            currentCallDiv.classList.add('active', 'refresh-animation');
+            
+            setTimeout(() => {
+              currentCallDiv.classList.remove('refresh-animation');
+            }, 500);
+          }
+          
+          // Cập nhật danh sách các cuộc gọi gần đây
+          updateRecentCalls(calls.slice(1)); // Bỏ cuộc gọi đầu tiên (đã hiển thị ở trên)
+          
+        } else {
+          // Không có cuộc gọi nào
+          document.getElementById('currentNumber').textContent = '---';
+          document.getElementById('currentService').textContent = 'Chưa có cuộc gọi';
+          document.getElementById('currentCallTime').textContent = '';
+          document.getElementById('currentCall').classList.remove('active');
+          
+          document.getElementById('callsList').innerHTML = '<div class="no-calls">Chưa có dữ liệu</div>';
+        }
+        
+        // Cập nhật thời gian last update
+        document.getElementById('lastUpdate').textContent = `Cập nhật: ${formatTime(new Date())}`;
+        
+      } catch (error) {
+        console.error('Error loading latest calls:', error);
+        document.getElementById('callsList').innerHTML = '<div class="no-calls">Lỗi kết nối</div>';
+      }
+    }
+
+    function updateRecentCalls(calls) {
+      const callsList = document.getElementById('callsList');
+      
+      if (calls.length === 0) {
+        callsList.innerHTML = '<div class="no-calls">Không có cuộc gọi gần đây</div>';
+        return;
+      }
+      
+      callsList.innerHTML = calls.map(call => `
+        <div class="call-item">
+          <div class="number">${call.number}</div>
+          <div class="service">${call.service}</div>
+          <div class="time">${formatDateTime(call.time)}</div>
+        </div>
+      `).join('');
+    }
+
+    // Khởi tạo
+    updateCurrentTime();
+    loadLatestCalls();
+
+    // Cập nhật thời gian mỗi giây
+    setInterval(updateCurrentTime, 1000);
+
+    // Cập nhật dữ liệu mỗi 10 giây (tăng từ 2 giây)
+    setInterval(loadLatestCalls, 10000);
+
+    // Xử lý window message cho popup
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.type === 'NEW_CALL') {
+        const { number, service } = event.data;
+        
+        // Cập nhật ngay lập tức
+        document.getElementById('currentNumber').textContent = number;
+        document.getElementById('currentService').textContent = service;
+        document.getElementById('currentCallTime').textContent = `Gọi lúc: ${formatTime(new Date())}`;
+        
+        const currentCallDiv = document.getElementById('currentCall');
+        currentCallDiv.classList.add('active', 'refresh-animation');
+        
+        setTimeout(() => {
+          currentCallDiv.classList.remove('refresh-animation');
+        }, 500);
+        
+        // Tải lại dữ liệu sau 1 giây
+        setTimeout(loadLatestCalls, 1000);
+      }
+    });
+  </script>
+</body>
+</html>

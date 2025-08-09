@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản trị Nâng cao - LaySo System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3vh;
+      align-items: start;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 2.5vh;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 3vh;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      color: #4a5568;
+      margin-bottom: 2vh;
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      color: #2d3748;
+      margin-bottom: 1.5vh;
+      font-size: 1.2em;
+    }
+
+    /* Stats overview */
+    .stats-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5vh;
+      margin-bottom: 3vh;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2vh;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-number {
+      font-size: 2.5em;
+      font-weight: bold;
+      margin-bottom: 0.5vh;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+
+    /* Chart section */
+    .chart-section {
+      margin-bottom: 3vh;
+    }
+
+    .star-distribution {
+      display: flex;
+      flex-direction: column;
+      gap: 1vh;
+      margin-bottom: 2vh;
+    }
+
+    .star-bar {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .star-label {
+      width: 60px;
+      font-weight: bold;
+      color: #f59e0b;
+    }
+
+    .star-progress {
+      flex: 1;
+      height: 25px;
+      background: #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .star-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+      border-radius: 12px;
+      transition: width 0.8s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    /* Service stats */
+    .service-stats {
+      margin-bottom: 3vh;
+    }
+
+    .service-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 2vh;
+      margin-bottom: 1.5vh;
+    }
+
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1vh;
+    }
+
+    .service-name {
+      font-weight: bold;
+      color: #2d3748;
+      flex: 1;
+    }
+
+    .service-score {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.5vh 1.5vh;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .service-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1vh;
+      margin-top: 1vh;
+    }
+
+    .service-detail {
+      text-align: center;
+      padding: 1vh;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .detail-number {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #4c51bf;
+    }
+
+    .detail-label {
+      font-size: 0.8em;
+      color: #718096;
+      margin-top: 0.5vh;
+    }
+
+    /* Reports grid */
+    .reports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5vh;
+    }
+
+    .report-btn {
+      display: block;
+      padding: 2vh;
+      background: linear-gradient(135deg, #4c51bf 0%, #667eea 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(76, 81, 191, 0.2);
+    }
+
+    .report-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(76, 81, 191, 0.3);
+    }
+
+    .report-btn.green {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
+    }
+
+    .report-btn.green:hover {
+      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+    }
+
+    .report-btn.purple {
+      background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+      box-shadow: 0 4px 15px rgba(159, 122, 234, 0.2);
+    }
+
+    .report-btn.purple:hover {
+      box-shadow: 0 8px 25px rgba(159, 122, 234, 0.3);
+    }
+
+    /* Buttons */
+    .refresh-btn {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      border: none;
+      padding: 1.5vh 3vh;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
+      width: 100%;
+    }
+
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+    }
+
+    /* Loading states */
+    .loading {
+      text-align: center;
+      color: #718096;
+      font-style: italic;
+      padding: 2vh;
+    }
+
+    /* Error states */
+    .error {
+      text-align: center;
+      color: #e53e3e;
+      background: #fed7d7;
+      padding: 2vh;
+      border-radius: 8px;
+      margin: 1vh 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        padding: 1vh;
+      }
+      
+      .stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .reports-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🏢 Quản trị Nâng cao LaySo System</h1>
+  
+  <div class="container">
+    <!-- Thống kê đánh giá -->
+    <div class="card full-width">
+      <h2>📊 Thống kê Đánh giá Chi tiết</h2>
+      
+      <!-- Tổng quan hệ thống -->
+      <div class="stats-overview">
+        <div class="stat-card">
+          <div class="stat-number" id="totalRatings">-</div>
+          <div class="stat-label">Tổng đánh giá</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avgRating">-</div>
+          <div class="stat-label">Điểm trung bình</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="todayRatings">-</div>
+          <div class="stat-label">Đánh giá hôm nay</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="weekRatings">-</div>
+          <div class="stat-label">Đánh giá tuần này</div>
+        </div>
+      </div>
+
+      <!-- Biểu đồ phân bố sao -->
+      <div class="chart-section">
+        <h3>📈 Phân bố điểm đánh giá</h3>
+        <div class="star-distribution" id="starDistribution">
+          <div class="loading">Đang tải dữ liệu...</div>
+        </div>
+      </div>
+
+      <button onclick="loadStatistics()" class="refresh-btn">
+        🔄 Cập nhật thống kê
+      </button>
+    </div>
+
+    <!-- Thống kê theo dịch vụ -->
+    <div class="card full-width">
+      <div class="service-stats" id="serviceStats">
+        <h3>🏢 Thống kê theo dịch vụ</h3>
+        <div class="loading">Đang tải dữ liệu...</div>
+      </div>
+    </div>
+
+    <!-- Công cụ quản trị -->
+    <div class="card">
+      <h2>🔧 Công cụ Quản trị</h2>
+      <div class="reports-grid">
+        <a href="javascript:void(0)" onclick="exportRatingsExcel()" class="report-btn green">
+          📋 Xuất Excel đánh giá
+        </a>
+        <a href="ratings-detail.html" target="_blank" class="report-btn">
+          🗂️ Chi tiết đánh giá
+        </a>
+        <a href="home.html" target="_blank" class="report-btn">
+          🏠 Trang lấy số
+        </a>
+      </div>
+    </div>
+
+    <!-- Màn hình hiển thị -->
+    <div class="card">
+      <h2>📺 Màn hình Hiển thị</h2>
+      <div class="reports-grid">
+        <a href="javascript:void(0)" onclick="openNumberDisplay()" class="report-btn purple">
+          📺 Màn hình số thứ tự
+        </a>
+        <a href="javascript:void(0)" onclick="openAllCountersDisplay()" class="report-btn purple">
+          🖥️ Màn hình tổng hợp
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variables
+    let ratingsData = null;
+
+    // Load statistics on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Trang admin-advanced đã tải');
+      loadStatistics();
+    });
+
+    // Load and display statistics
+    async function loadStatistics() {
+      console.log('📊 Đang tải thống kê...');
+      try {
+        const response = await fetch('/ratings-report');
+        console.log('📡 Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        ratingsData = await response.json();
+        console.log('📈 Dữ liệu nhận được:', ratingsData);
+        
+        displayOverviewStats();
+        displayStarDistribution();
+        displayServiceStats();
+      } catch (error) {
+        console.error('❌ Lỗi tải thống kê:', error);
+        showError('Không thể tải dữ liệu thống kê: ' + error.message);
+      }
+    }
+
+    // Display overview statistics
+    function displayOverviewStats() {
+      console.log('📋 Hiển thị thống kê tổng quan');
+      if (!ratingsData || !ratingsData.systemStats) {
+        console.log('⚠️ Không có dữ liệu systemStats');
+        return;
+      }
+
+      const { systemStats } = ratingsData;
+      console.log('📊 SystemStats:', systemStats);
+      
+      document.getElementById('totalRatings').textContent = systemStats.totalRatings || 0;
+      document.getElementById('avgRating').textContent = (systemStats.totalOverallAverage || 0).toFixed(1) + '/5';
+      document.getElementById('todayRatings').textContent = systemStats.todayRatings || 0;
+      document.getElementById('weekRatings').textContent = systemStats.thisWeekRatings || 0;
+    }
+
+    // Display star distribution chart
+    function displayStarDistribution() {
+      console.log('⭐ Hiển thị phân bố sao');
+      if (!ratingsData || !ratingsData.ratings) {
+        console.log('⚠️ Không có dữ liệu ratings');
+        return;
+      }
+
+      const { ratings } = ratingsData;
+      const distribution = {};
+      
+      // Count ratings by star
+      for (let i = 1; i <= 5; i++) {
+        distribution[i] = ratings.filter(r => r.overall === i).length;
+      }
+
+      const total = Object.values(distribution).reduce((sum, count) => sum + count, 0);
+      const container = document.getElementById('starDistribution');
+      
+      console.log('📊 Phân bố sao:', distribution, 'Tổng:', total);
+      
+      if (total === 0) {
+        container.innerHTML = '<div class="loading">Chưa có đánh giá nào</div>';
+        return;
+      }
+
+      let html = '';
+      for (let star = 5; star >= 1; star--) {
+        const count = distribution[star] || 0;
+        const percentage = total > 0 ? (count / total * 100).toFixed(1) : 0;
+        
+        html += `
+          <div class="star-bar">
+            <div class="star-label">${star}⭐</div>
+            <div class="star-progress">
+              <div class="star-fill" style="width: ${percentage}%">
+                ${count} (${percentage}%)
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Display service statistics
+    function displayServiceStats() {
+      console.log('🏢 Hiển thị thống kê dịch vụ');
+      if (!ratingsData || !ratingsData.serviceStats) {
+        console.log('⚠️ Không có dữ liệu serviceStats');
+        return;
+      }
+
+      const { serviceStats } = ratingsData;
+      const container = document.getElementById('serviceStats');
+      
+      console.log('🏢 ServiceStats:', serviceStats);
+      
+      if (Object.keys(serviceStats).length === 0) {
+        container.innerHTML = '<h3>🏢 Thống kê theo dịch vụ</h3><div class="loading">Chưa có dữ liệu</div>';
+        return;
+      }
+
+      let html = '<h3>🏢 Thống kê theo dịch vụ</h3>';
+
+      for (const [serviceName, stats] of Object.entries(serviceStats)) {
+        const starIcons = '⭐'.repeat(Math.round(stats.overallAverage));
+        
+        html += `
+          <div class="service-item">
+            <div class="service-header">
+              <div class="service-name">${serviceName}</div>
+              <div class="service-score">${stats.overallAverage.toFixed(1)}/5 ${starIcons}</div>
+            </div>
+            <div class="service-details">
+              <div class="service-detail">
+                <div class="detail-number">${stats.totalCount}</div>
+                <div class="detail-label">Tổng đánh giá</div>
+              </div>
+              <div class="service-detail">
+                <div class="detail-number">${stats.distribution.star5}</div>
+                <div class="detail-label">5 sao</div>
+              </div>
+              <div class="service-detail">
+                <div class="detail-number">${stats.distribution.star4}</div>
+                <div class="detail-label">4 sao</div>
+              </div>
+              <div class="service-detail">
+                <div class="detail-number">${stats.distribution.star3}</div>
+                <div class="detail-label">3 sao</div>
+              </div>
+              <div class="service-detail">
+                <div class="detail-number">${stats.distribution.star2}</div>
+                <div class="detail-label">2 sao</div>
+              </div>
+              <div class="service-detail">
+                <div class="detail-number">${stats.distribution.star1}</div>
+                <div class="detail-label">1 sao</div>
+              </div>
+              <div class="service-detail">
+                <div class="detail-number">${stats.hasComments}</div>
+                <div class="detail-label">Có nhận xét</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Utility functions
+    function showError(message) {
+      console.error('❌ Hiển thị lỗi:', message);
+      
+      // Show error in stat cards
+      document.getElementById('totalRatings').textContent = 'Lỗi';
+      document.getElementById('avgRating').textContent = 'Lỗi';
+      document.getElementById('todayRatings').textContent = 'Lỗi';
+      document.getElementById('weekRatings').textContent = 'Lỗi';
+      
+      // Show error in charts
+      document.getElementById('starDistribution').innerHTML = `<div class="error">${message}</div>`;
+      document.getElementById('serviceStats').innerHTML = `<h3>🏢 Thống kê theo dịch vụ</h3><div class="error">${message}</div>`;
+    }
+
+    // Export functions
+    function exportRatingsExcel() {
+      console.log('📋 Xuất Excel');
+      window.open('/export-ratings-excel', '_blank');
+    }
+
+    // Display functions
+    function openNumberDisplay() {
+      console.log('📺 Mở màn hình số thứ tự');
+      window.open('number-display.html', 'numberDisplay', 'width=1200,height=900,scrollbars=yes,resizable=yes');
+    }
+
+    function openAllCountersDisplay() {
+      console.log('🖥️ Mở màn hình tổng hợp');
+      window.open('all-counters-display.html', 'allCountersDisplay', 'width=1600,height=1000,scrollbars=yes,resizable=yes');
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(function() {
+      console.log('🔄 Auto refresh thống kê');
+      loadStatistics();
+    }, 30000);
+
+    // Test API connection
+    fetch('/ratings-report')
+      .then(response => {
+        console.log('🔗 Test API kết nối:', response.status);
+        if (response.ok) {
+          console.log('✅ API hoạt động bình thường');
+        } else {
+          console.log('❌ API có vấn đề:', response.status);
+        }
+      })
+      .catch(error => {
+        console.log('❌ Không thể kết nối API:', error);
+      });
+  </script>
+</body>
+</html>

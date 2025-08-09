@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xuất báo cáo chuyên nghiệp</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 3vh;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      font-size: 3vh;
+      margin-bottom: 3vh;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 3vh;
+      margin-bottom: 3vh;
+    }
+
+    .export-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 2.5vh;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .export-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .export-card h3 {
+      color: white;
+      font-size: 2.2vh;
+      margin-bottom: 1.5vh;
+      display: flex;
+      align-items: center;
+      gap: 1vh;
+    }
+
+    .export-card p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.4vh;
+      margin-bottom: 2vh;
+      line-height: 1.6;
+    }
+
+    .export-options {
+      margin-bottom: 2vh;
+    }
+
+    .export-options label {
+      display: flex;
+      align-items: center;
+      color: white;
+      margin-bottom: 1vh;
+      cursor: pointer;
+    }
+
+    .export-options input[type="checkbox"] {
+      margin-right: 1vh;
+      transform: scale(1.2);
+    }
+
+    .date-range {
+      display: flex;
+      gap: 1vh;
+      margin: 1vh 0;
+    }
+
+    .date-range input {
+      flex: 1;
+      padding: 1vh;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .date-range input:focus {
+      border-color: #00ff88;
+      outline: none;
+    }
+
+    .export-btn {
+      width: 100%;
+      padding: 1.5vh 2vh;
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.6vh;
+      transition: all 0.3s ease;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+    }
+
+    .export-btn:disabled {
+      background: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.5);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .stats-preview {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 2vh;
+      margin-bottom: 3vh;
+      display: none;
+    }
+
+    .stats-preview.show {
+      display: block;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2vh;
+      margin-top: 2vh;
+    }
+
+    .stat-item {
+      text-align: center;
+      color: white;
+    }
+
+    .stat-number {
+      font-size: 2.5vh;
+      font-weight: 700;
+      color: #00ff88;
+    }
+
+    .stat-label {
+      font-size: 1.2vh;
+      opacity: 0.8;
+      margin-top: 0.5vh;
+    }
+
+    .preview-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      padding: 1vh 2vh;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 2vh;
+      font-size: 1.4vh;
+    }
+
+    .preview-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .format-options {
+      display: flex;
+      gap: 1vh;
+      margin: 1vh 0;
+    }
+
+    .format-btn {
+      flex: 1;
+      padding: 1vh;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .format-btn.active {
+      background: rgba(0, 255, 136, 0.3);
+      border-color: #00ff88;
+      color: #00ff88;
+    }
+
+    .format-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Xuất báo cáo chuyên nghiệp</h1>
+    
+    <div class="stats-preview" id="statsPreview">
+      <h3 style="color: white; text-align: center; margin-bottom: 2vh;">📈 Xem trước thống kê</h3>
+      <div class="stats-grid" id="statsGrid">
+        <!-- Stats will be loaded here -->
+      </div>
+    </div>
+
+    <div class="export-grid">
+      <!-- Báo cáo tổng hợp -->
+      <div class="export-card">
+        <h3>📋 Báo cáo tổng hợp</h3>
+        <p>Báo cáo đầy đủ với thống kê tổng quan, phân tích xu hướng, và chi tiết từng đánh giá. Phù hợp cho báo cáo định kỳ và trình bày lãnh đạo.</p>
+        
+        <div class="export-options">
+          <label><input type="checkbox" id="includeCharts" checked> Bao gồm biểu đồ và phân tích</label>
+          <label><input type="checkbox" id="includeComments" checked> Bao gồm ý kiến khách hàng</label>
+          <label><input type="checkbox" id="includeTrends" checked> Phân tích xu hướng theo thời gian</label>
+        </div>
+
+        <div class="date-range">
+          <input type="date" id="startDate1" title="Từ ngày">
+          <input type="date" id="endDate1" title="Đến ngày">
+        </div>
+
+        <div class="format-options">
+          <div class="format-btn active" data-format="detailed">Chi tiết</div>
+          <div class="format-btn" data-format="summary">Tóm tắt</div>
+        </div>
+
+        <button class="preview-btn" onclick="window.open('export-preview.html', '_blank')">👁️ Xem demo báo cáo</button>
+        <button class="export-btn" onclick="exportComprehensive()">📥 Xuất báo cáo tổng hợp</button>
+      </div>
+
+      <!-- Báo cáo điều hành -->
+      <div class="export-card">
+        <h3>⚡ Báo cáo điều hành</h3>
+        <p>Báo cáo ngắn gọn với các chỉ số quan trọng, thích hợp cho họp điều hành hàng ngày và theo dõi KPI.</p>
+        
+        <div class="export-options">
+          <label><input type="checkbox" id="kpiOnly" checked> Chỉ các chỉ số KPI</label>
+          <label><input type="checkbox" id="alertsOnly"> Chỉ cảnh báo cần xử lý</label>
+          <label><input type="checkbox" id="comparison"> So sánh với kỳ trước</label>
+        </div>
+
+        <div class="date-range">
+          <input type="date" id="startDate2" title="Từ ngày">
+          <input type="date" id="endDate2" title="Đến ngày">
+        </div>
+
+        <div class="format-options">
+          <div class="format-btn active" data-format="dashboard">Dashboard</div>
+          <div class="format-btn" data-format="executive">Điều hành</div>
+        </div>
+
+        <button class="preview-btn" onclick="window.open('export-preview.html', '_blank')">👁️ Xem demo báo cáo</button>
+        <button class="export-btn" onclick="exportExecutive()">📊 Xuất báo cáo điều hành</button>
+      </div>
+
+      <!-- Báo cáo phân tích -->
+      <div class="export-card">
+        <h3>🔍 Báo cáo phân tích</h3>
+        <p>Báo cáo chuyên sâu với phân tích thống kê nâng cao, tương quan giữa các yếu tố, và đề xuất cải thiện.</p>
+        
+        <div class="export-options">
+          <label><input type="checkbox" id="correlation" checked> Phân tích tương quan</label>
+          <label><input type="checkbox" id="recommendations" checked> Đề xuất cải thiện</label>
+          <label><input type="checkbox" id="benchmarking"> So sánh chuẩn ngành</label>
+        </div>
+
+        <div class="date-range">
+          <input type="date" id="startDate3" title="Từ ngày">
+          <input type="date" id="endDate3" title="Đến ngày">
+        </div>
+
+        <div class="format-options">
+          <div class="format-btn active" data-format="analytical">Phân tích</div>
+          <div class="format-btn" data-format="scientific">Khoa học</div>
+        </div>
+
+        <button class="preview-btn" onclick="window.open('export-preview.html', '_blank')">👁️ Xem demo báo cáo</button>
+        <button class="export-btn" onclick="exportAnalytical()">🔬 Xuất báo cáo phân tích</button>
+      </div>
+
+      <!-- Báo cáo custom -->
+      <div class="export-card">
+        <h3>⚙️ Báo cáo tùy chỉnh</h3>
+        <p>Tạo báo cáo theo yêu cầu riêng với các trường dữ liệu và định dạng tùy chọn.</p>
+        
+        <div class="export-options">
+          <label><input type="checkbox" id="customFields" checked> Chọn trường dữ liệu</label>
+          <label><input type="checkbox" id="customFilters"> Bộ lọc nâng cao</label>
+          <label><input type="checkbox" id="customFormat"> Định dạng tùy chỉnh</label>
+        </div>
+
+        <div class="date-range">
+          <input type="date" id="startDate4" title="Từ ngày">
+          <input type="date" id="endDate4" title="Đến ngày">
+        </div>
+
+        <div class="format-options">
+          <div class="format-btn active" data-format="standard">Chuẩn</div>
+          <div class="format-btn" data-format="custom">Tùy chỉnh</div>
+        </div>
+
+        <button class="preview-btn" onclick="window.open('export-preview.html', '_blank')">👁️ Xem demo báo cáo</button>
+        <button class="export-btn" onclick="exportCustom()">🛠️ Xuất báo cáo tùy chỉnh</button>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 3vh;">
+      <button class="export-btn" onclick="window.open('/admin-advanced.html', '_blank')" 
+              style="background: rgba(255, 255, 255, 0.2); color: white; width: auto; padding: 1.5vh 3vh;">
+        🏠 Quay lại trang quản trị
+      </button>
+    </div>
+  </div>
+
+  <script src="advanced-exporter.js"></script>
+  <script>
+    let ratingsData = [];
+    let currentFormat = {};
+    let exporter = new AdvancedExporter();
+
+    // Set default dates (last 30 days)
+    function setDefaultDates() {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      const todayStr = today.toISOString().split('T')[0];
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      ['startDate1', 'startDate2', 'startDate3', 'startDate4'].forEach(id => {
+        document.getElementById(id).value = thirtyDaysAgoStr;
+      });
+      
+      ['endDate1', 'endDate2', 'endDate3', 'endDate4'].forEach(id => {
+        document.getElementById(id).value = todayStr;
+      });
+    }
+
+    // Load ratings data
+    async function loadRatingsData() {
+      try {
+        const response = await fetch('/ratings-report');
+        const data = await response.json();
+        ratingsData = data.ratings || [];
+        return data;
+      } catch (error) {
+        console.error('Error loading ratings:', error);
+        return null;
+      }
+    }
+
+    // Preview data statistics
+    async function previewData(reportType) {
+      const data = await loadRatingsData();
+      if (!data) {
+        alert('❌ Không thể tải dữ liệu');
+        return;
+      }
+
+      const stats = calculatePreviewStats(data, reportType);
+      displayPreviewStats(stats);
+    }
+
+    function calculatePreviewStats(data, reportType) {
+      const total = data.totalRatings;
+      const avgRating = data.ratings.length > 0 ? 
+        (data.ratings.reduce((sum, r) => sum + (r.overall || 0), 0) / data.ratings.length).toFixed(1) : '0.0';
+      const satisfied = data.ratings.filter(r => (r.overall || 0) >= 4).length;
+      const satisfactionRate = total > 0 ? ((satisfied / total) * 100).toFixed(1) : '0.0';
+      const services = [...new Set(data.ratings.map(r => r.service))].length;
+      const withCustomerCode = data.ratings.filter(r => r.customerCode && r.customerCode.trim()).length;
+
+      return {
+        total,
+        avgRating,
+        satisfactionRate,
+        services,
+        withCustomerCode,
+        reportType
+      };
+    }
+
+    function displayPreviewStats(stats) {
+      const statsGrid = document.getElementById('statsGrid');
+      const preview = document.getElementById('statsPreview');
+      
+      statsGrid.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-number">${stats.total}</div>
+          <div class="stat-label">Tổng đánh giá</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.avgRating} ⭐</div>
+          <div class="stat-label">Điểm trung bình</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.satisfactionRate}%</div>
+          <div class="stat-label">Tỷ lệ hài lòng</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.services}</div>
+          <div class="stat-label">Dịch vụ</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.withCustomerCode}</div>
+          <div class="stat-label">Có mã khách hàng</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.reportType}</div>
+          <div class="stat-label">Loại báo cáo</div>
+        </div>
+      `;
+      
+      preview.classList.add('show');
+    }
+
+    // Get date range from form
+    function getDateRange(cardIndex) {
+      const startDate = document.getElementById(`startDate${cardIndex}`).value;
+      const endDate = document.getElementById(`endDate${cardIndex}`).value;
+      return startDate && endDate ? { startDate, endDate } : null;
+    }
+
+    // Export functions using AdvancedExporter
+    async function exportComprehensive() {
+      try {
+        const dateRange = getDateRange(1);
+        const includeCharts = document.getElementById('includeCharts').checked;
+        const includeComments = document.getElementById('includeComments').checked;
+        const includeTrends = document.getElementById('includeTrends').checked;
+        
+        const options = {
+          dateRange,
+          includeCharts,
+          includeComments,
+          includeTrends
+        };
+        
+        // Show loading
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Đang xuất...';
+        btn.disabled = true;
+        
+        await exporter.exportComprehensiveReport(options);
+        
+        // Reset button
+        btn.textContent = originalText;
+        btn.disabled = false;
+        
+        alert('✅ Xuất báo cáo tổng hợp thành công!');
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('❌ Lỗi xuất báo cáo: ' + error.message);
+        
+        // Reset button
+        const btn = event.target;
+        btn.textContent = '� Xuất báo cáo tổng hợp';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportExecutive() {
+      try {
+        const dateRange = getDateRange(2);
+        const kpiOnly = document.getElementById('kpiOnly').checked;
+        const alertsOnly = document.getElementById('alertsOnly').checked;
+        const comparison = document.getElementById('comparison').checked;
+        
+        const options = {
+          dateRange,
+          kpiOnly,
+          alertsOnly,
+          comparison
+        };
+        
+        // Show loading
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Đang xuất...';
+        btn.disabled = true;
+        
+        await exporter.exportExecutiveReport(options);
+        
+        // Reset button
+        btn.textContent = originalText;
+        btn.disabled = false;
+        
+        alert('✅ Xuất báo cáo điều hành thành công!');
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('❌ Lỗi xuất báo cáo: ' + error.message);
+        
+        // Reset button
+        const btn = event.target;
+        btn.textContent = '📊 Xuất báo cáo điều hành';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportAnalytical() {
+      try {
+        const dateRange = getDateRange(3);
+        const correlation = document.getElementById('correlation').checked;
+        const recommendations = document.getElementById('recommendations').checked;
+        const benchmarking = document.getElementById('benchmarking').checked;
+        
+        const options = {
+          dateRange,
+          correlation,
+          recommendations,
+          benchmarking
+        };
+        
+        // Show loading
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Đang xuất...';
+        btn.disabled = true;
+        
+        await exporter.exportAnalyticalReport(options);
+        
+        // Reset button
+        btn.textContent = originalText;
+        btn.disabled = false;
+        
+        alert('✅ Xuất báo cáo phân tích thành công!');
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('❌ Lỗi xuất báo cáo: ' + error.message);
+        
+        // Reset button
+        const btn = event.target;
+        btn.textContent = '🔬 Xuất báo cáo phân tích';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportCustom() {
+      alert('🚧 Đang phát triển - Báo cáo tùy chỉnh\n⚙️ Sẽ bao gồm:\n- Chọn trường dữ liệu\n- Bộ lọc nâng cao\n- Định dạng tùy chỉnh\n- Template có sẵn');
+    }
+
+    // Format button handlers
+    document.addEventListener('DOMContentLoaded', function() {
+      setDefaultDates();
+      
+      // Handle format buttons
+      document.querySelectorAll('.format-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const card = this.closest('.export-card');
+          card.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+      
+      // Auto-preview when page loads
+      setTimeout(() => {
+        previewData('comprehensive');
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

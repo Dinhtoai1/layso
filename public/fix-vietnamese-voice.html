@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khôi phục giọng tiếng Việt</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                0 0 0 1px rgba(255,255,255,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            padding: 50px;
+            margin: auto;
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e91e63, #9c27b0, #3f51b5, #2196f3, #00bcd4);
+            border-radius: 25px 25px 0 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 { 
+            color: #2c3e50;
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            background: linear-gradient(45deg, #e91e63, #9c27b0, #3f51b5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease-in-out infinite;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: -1px;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        h3 {
+            color: #2c3e50;
+            margin-bottom: 18px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h3::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(45deg, #e91e63, #9c27b0);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+            perspective: 1000px;
+        }
+        
+        .step {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(233, 30, 99, 0.1);
+            box-shadow: 
+                0 10px 30px rgba(0,0,0,0.1),
+                0 1px 8px rgba(0,0,0,0.05),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+        
+        .step::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, #e91e63, #9c27b0, #3f51b5);
+            transition: width 0.3s ease;
+        }
+        
+        .step::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(233, 30, 99, 0.05) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .step:hover {
+            transform: translateY(-8px) rotateX(5deg);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.15),
+                0 5px 15px rgba(233, 30, 99, 0.2),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        
+        .step:hover::before {
+            width: 8px;
+        }
+        
+        .step:hover::after {
+            opacity: 1;
+        }
+        
+        .step p {
+            color: #6c7b7f;
+            margin-bottom: 25px;
+            line-height: 1.7;
+            font-size: 15px;
+            font-weight: 400;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #e91e63, #ad1457, #880e4f);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 6px 20px rgba(233, 30, 99, 0.3),
+                0 1px 3px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(10px);
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        button:hover { 
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+                0 10px 30px rgba(233, 30, 99, 0.4),
+                0 5px 15px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            background: linear-gradient(135deg, #f06292, #e91e63, #ad1457);
+        }
+        
+        button:active {
+            transform: translateY(-1px) scale(1.02);
+            transition: all 0.1s ease;
+        }
+        
+        .success { 
+            color: #27ae60; 
+            font-weight: 600;
+            background: linear-gradient(135deg, #d5f4e6, #e8f8f5, #ffffff);
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 5px solid #27ae60;
+            border-top: 1px solid rgba(39, 174, 96, 0.2);
+            margin: 12px 0;
+            box-shadow: 
+                0 4px 15px rgba(39, 174, 96, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .success:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.15);
+        }
+        
+        .error { 
+            color: #e74c3c; 
+            font-weight: 600;
+            background: linear-gradient(135deg, #fadbd8, #fef2f2, #ffffff);
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 5px solid #e74c3c;
+            border-top: 1px solid rgba(231, 76, 60, 0.2);
+            margin: 12px 0;
+            box-shadow: 
+                0 4px 15px rgba(231, 76, 60, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .error:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.15);
+        }
+        
+        .warning { 
+            color: #f39c12; 
+            font-weight: 600;
+            background: linear-gradient(135deg, #fef5e7, #fefaf0, #ffffff);
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 5px solid #f39c12;
+            border-top: 1px solid rgba(243, 156, 18, 0.2);
+            margin: 12px 0;
+            box-shadow: 
+                0 4px 15px rgba(243, 156, 18, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .warning:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.15);
+        }
+        
+        .info { 
+            color: #3498db;
+            background: linear-gradient(135deg, #ebf3fd, #f0f8ff, #ffffff);
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 5px solid #3498db;
+            border-top: 1px solid rgba(52, 152, 219, 0.2);
+            margin: 12px 0;
+            box-shadow: 
+                0 4px 15px rgba(52, 152, 219, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .info:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+        }
+        
+        .voice-item {
+            background: linear-gradient(135deg, #d5f4e6, #e8f8f5, #ffffff);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 15px;
+            border-left: 5px solid #27ae60;
+            border-top: 1px solid rgba(39, 174, 96, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 4px 15px rgba(39, 174, 96, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .voice-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(39, 174, 96, 0.1));
+            transition: width 0.3s ease;
+        }
+        
+        .voice-item:hover {
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 
+                0 8px 25px rgba(39, 174, 96, 0.2),
+                0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .voice-item:hover::before {
+            width: 100%;
+        }
+        
+        .no-voice {
+            background: linear-gradient(135deg, #fadbd8, #fef2f2, #ffffff);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 15px;
+            border-left: 5px solid #e74c3c;
+            border-top: 1px solid rgba(231, 76, 60, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 4px 15px rgba(231, 76, 60, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .no-voice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(231, 76, 60, 0.1));
+            transition: width 0.3s ease;
+        }
+        
+        .no-voice:hover {
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 
+                0 8px 25px rgba(231, 76, 60, 0.2),
+                0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .no-voice:hover::before {
+            width: 100%;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 20px;
+            margin: 20px 0;
+            border: 2px solid #e8ecef;
+            border-radius: 15px;
+            font-size: 15px;
+            font-weight: 400;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,249,250,0.9));
+            box-shadow: 
+                0 4px 15px rgba(0,0,0,0.05),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #e91e63;
+            box-shadow: 
+                0 0 0 4px rgba(233, 30, 99, 0.1),
+                0 6px 20px rgba(233, 30, 99, 0.15),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            transform: translateY(-2px);
+        }
+        
+        input[type="text"]::placeholder {
+            color: #a0a8b0;
+            font-style: italic;
+        }
+        
+        .final-results {
+            grid-column: 1 / -1;
+            background: linear-gradient(145deg, #f8f9fa, #ffffff, #f0f2f5);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 3px dashed rgba(233, 30, 99, 0.3);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 10px 30px rgba(0,0,0,0.08),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        
+        .final-results::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(233, 30, 99, 0.05) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+        
+        .final-results > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive cho màn hình 16:9 và cải thiện UX */
+        @media screen and (max-width: 1600px) {
+            .container {
+                max-width: 95%;
+                padding: 40px;
+            }
+            
+            .steps-grid {
+                grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+                gap: 25px;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+        }
+        
+        @media screen and (max-width: 1366px) {
+            .container {
+                max-width: 95%;
+                padding: 35px;
+            }
+            
+            .steps-grid {
+                grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+                gap: 22px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .step {
+                padding: 25px;
+            }
+        }
+        
+        @media screen and (max-width: 1024px) {
+            .container {
+                padding: 30px;
+            }
+            
+            .steps-grid {
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                gap: 20px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .container {
+                padding: 25px;
+            }
+            
+            .steps-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 30px;
+            }
+            
+            .step {
+                padding: 20px;
+            }
+            
+            .button-group {
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            button {
+                padding: 12px 20px;
+                font-size: 13px;
+            }
+            
+            input[type="text"] {
+                padding: 15px 18px;
+                font-size: 14px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .step {
+                padding: 18px;
+            }
+            
+            button {
+                padding: 10px 16px;
+                font-size: 12px;
+                border-radius: 20px;
+            }
+            
+            .final-results {
+                padding: 25px;
+            }
+        }
+        
+        /* Scrollbar tùy chỉnh */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #e91e63, #9c27b0);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, #ad1457, #7b1fa2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇻🇳 Khôi phục giọng tiếng Việt</h1>
+        
+        <div class="steps-grid">
+            <div class="step">
+                <h3>🔍 Bước 1: Quét toàn bộ hệ thống</h3>
+                <p>Tìm kiếm tất cả giọng nói có thể là tiếng Việt</p>
+                <div class="button-group">
+                    <button onclick="scanAllVoices()">🔍 Quét tất cả giọng nói</button>
+                    <button onclick="forceRefreshVoices()">🔄 Force refresh voices</button>
+                </div>
+                <div id="scanResults"></div>
+            </div>
+
+            <div class="step">
+                <h3>🎯 Bước 2: Test các phương pháp detect</h3>
+                <p>Thử nhiều cách khác nhau để tìm giọng Việt</p>
+                <div class="button-group">
+                    <button onclick="detectVietnameseMethod1()">Method 1: Lang code</button>
+                    <button onclick="detectVietnameseMethod2()">Method 2: Name contains</button>
+                    <button onclick="detectVietnameseMethod3()">Method 3: All patterns</button>
+                </div>
+                <div id="detectResults"></div>
+            </div>
+
+            <div class="step">
+                <h3>💻 Bước 3: Kiểm tra hệ điều hành</h3>
+                <p>Cài đặt và kích hoạt giọng tiếng Việt trên Windows</p>
+                <div class="button-group">
+                    <button onclick="checkSystemVoices()">🖥️ Check system info</button>
+                    <button onclick="showWindowsInstructions()">📝 Hướng dẫn cài đặt</button>
+                </div>
+                <div id="systemResults"></div>
+            </div>
+
+            <div class="step">
+                <h3>🔧 Bước 4: Test thủ công</h3>
+                <p>Test từng giọng một cách thủ công</p>
+                <input type="text" id="testText" value="Xin chào, tôi đang test giọng tiếng Việt" placeholder="Nhập văn bản để test...">
+                <div class="button-group">
+                    <button onclick="testAllVoicesManually()">🎤 Test từng giọng</button>
+                    <button onclick="testWithFallback()">🔄 Test với fallback</button>
+                </div>
+                <div id="manualResults"></div>
+            </div>
+
+            <div class="step final-results">
+                <h3>📊 Kết quả cuối cùng</h3>
+                <div id="finalResults">
+                    <p class="info">🚀 Chạy các test ở trên để xem kết quả...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allVoices = [];
+        let vietnameseVoices = [];
+
+        function log(message, type = 'info') {
+            console.log(message);
+        }
+
+        function displayResults(containerId, content) {
+            document.getElementById(containerId).innerHTML = content;
+        }
+
+        // Bước 1: Quét toàn bộ hệ thống
+        function scanAllVoices() {
+            log('🔍 Bắt đầu quét toàn bộ hệ thống...');
+            
+            try {
+                allVoices = speechSynthesis.getVoices();
+                
+                if (allVoices.length === 0) {
+                    displayResults('scanResults', 
+                        '<div class="no-voice">❌ Không tìm thấy giọng nói nào! Hệ thống có thể chưa tải xong.</div>'
+                    );
+                    setTimeout(scanAllVoices, 1000);
+                    return;
+                }
+
+                let html = `<div class="success">✅ Tìm thấy ${allVoices.length} giọng nói tổng cộng</div>`;
+                
+                // Hiển thị TẤT CẢ giọng nói
+                html += '<h4>📋 Danh sách chi tiết:</h4>';
+                allVoices.forEach((voice, index) => {
+                    const isVietnamese = checkIfVietnamese(voice);
+                    const className = isVietnamese ? 'voice-item' : 'info';
+                    const icon = isVietnamese ? '🇻🇳' : '🌐';
+                    
+                    html += `<div class="${className}">
+                        ${icon} <strong>${index + 1}. ${voice.name}</strong><br>
+                        Lang: ${voice.lang} | Local: ${voice.localService} | Default: ${voice.default}<br>
+                        <button onclick="testSingleVoice(${index})">Test</button>
+                    </div>`;
+                });
+
+                displayResults('scanResults', html);
+                
+                // Tự động chạy detect
+                setTimeout(() => {
+                    detectVietnameseMethod3();
+                }, 500);
+                
+            } catch (error) {
+                displayResults('scanResults', 
+                    `<div class="error">❌ Lỗi khi quét: ${error.message}</div>`
+                );
+            }
+        }
+
+        function forceRefreshVoices() {
+            log('🔄 Force refresh voices...');
+            speechSynthesis.cancel();
+            
+            // Clear cache
+            allVoices = [];
+            vietnameseVoices = [];
+            
+            // Force reload
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = scanAllVoices;
+            }
+            
+            setTimeout(scanAllVoices, 500);
+        }
+
+        // Kiểm tra xem giọng có phải tiếng Việt không
+        function checkIfVietnamese(voice) {
+            const lang = voice.lang.toLowerCase();
+            const name = voice.name.toLowerCase();
+            
+            return (
+                lang.includes('vi') ||
+                lang === 'vi-vn' ||
+                lang === 'vi-VN' ||
+                name.includes('vietnam') ||
+                name.includes('vietnamese') ||
+                name.includes('việt') ||
+                name.includes('mai') ||
+                name.includes('linh') ||
+                name.includes('yen') ||
+                name.includes('hương') ||
+                name.includes('lan') ||
+                name.includes('minh') ||
+                name.includes('hoa')
+            );
+        }
+
+        // Bước 2: Các phương pháp detect
+        function detectVietnameseMethod1() {
+            log('🎯 Method 1: Detect by language code');
+            
+            const method1Voices = allVoices.filter(voice => {
+                const lang = voice.lang.toLowerCase();
+                return lang === 'vi' || lang === 'vi-vn' || lang.startsWith('vi-');
+            });
+            
+            let html = `<h4>Method 1 - Language Code: Tìm thấy ${method1Voices.length} giọng</h4>`;
+            
+            if (method1Voices.length > 0) {
+                method1Voices.forEach(voice => {
+                    html += `<div class="voice-item">🇻🇳 ${voice.name} (${voice.lang})</div>`;
+                });
+            } else {
+                html += '<div class="no-voice">❌ Không tìm thấy giọng nào qua language code</div>';
+            }
+            
+            displayResults('detectResults', html);
+        }
+
+        function detectVietnameseMethod2() {
+            log('🎯 Method 2: Detect by name patterns');
+            
+            const method2Voices = allVoices.filter(voice => {
+                const name = voice.name.toLowerCase();
+                return (
+                    name.includes('vietnam') ||
+                    name.includes('vietnamese') ||
+                    name.includes('việt') ||
+                    name.includes('mai') ||
+                    name.includes('linh') ||
+                    name.includes('yen') ||
+                    name.includes('hương')
+                );
+            });
+            
+            let html = `<h4>Method 2 - Name Patterns: Tìm thấy ${method2Voices.length} giọng</h4>`;
+            
+            if (method2Voices.length > 0) {
+                method2Voices.forEach(voice => {
+                    html += `<div class="voice-item">🇻🇳 ${voice.name} (${voice.lang})</div>`;
+                });
+            } else {
+                html += '<div class="no-voice">❌ Không tìm thấy giọng nào qua name patterns</div>';
+            }
+            
+            document.getElementById('detectResults').innerHTML += html;
+        }
+
+        function detectVietnameseMethod3() {
+            log('🎯 Method 3: Comprehensive detection');
+            
+            vietnameseVoices = allVoices.filter(checkIfVietnamese);
+            
+            let html = `<h4>Method 3 - Comprehensive: Tìm thấy ${vietnameseVoices.length} giọng Việt</h4>`;
+            
+            if (vietnameseVoices.length > 0) {
+                vietnameseVoices.forEach((voice, index) => {
+                    const isFemale = voice.name.toLowerCase().includes('female') || 
+                                   voice.name.toLowerCase().includes('woman') ||
+                                   voice.name.toLowerCase().includes('mai') ||
+                                   voice.name.toLowerCase().includes('linh');
+                    const gender = isFemale ? '👩 Nữ' : '👨 Nam/Không rõ';
+                    
+                    html += `<div class="voice-item">
+                        🇻🇳 <strong>${voice.name}</strong> (${voice.lang}) ${gender}<br>
+                        <button onclick="testVietnameseVoice(${index})">🎤 Test giọng này</button>
+                    </div>`;
+                });
+                
+                // Update final results
+                updateFinalResults('success', `✅ Tìm thấy ${vietnameseVoices.length} giọng tiếng Việt!`);
+            } else {
+                html += '<div class="no-voice">❌ KHÔNG TÌM THẤY GIỌNG TIẾNG VIỆT NÀO!</div>';
+                updateFinalResults('error', '❌ Không có giọng tiếng Việt trên hệ thống!');
+            }
+            
+            document.getElementById('detectResults').innerHTML += html;
+        }
+
+        // Bước 3: Kiểm tra hệ điều hành
+        function checkSystemVoices() {
+            const userAgent = navigator.userAgent;
+            const isWindows = userAgent.includes('Windows');
+            const isChrome = userAgent.includes('Chrome');
+            const isEdge = userAgent.includes('Edge');
+            
+            let html = `<h4>🖥️ Thông tin hệ thống:</h4>`;
+            html += `<div class="info">
+                🖥️ OS: ${isWindows ? 'Windows' : 'Khác'}<br>
+                🌐 Browser: ${isChrome ? 'Chrome' : isEdge ? 'Edge' : 'Khác'}<br>
+                📊 Total voices: ${allVoices.length}<br>
+                🇻🇳 Vietnamese voices: ${vietnameseVoices.length}
+            </div>`;
+            
+            if (isWindows && vietnameseVoices.length === 0) {
+                html += `<div class="warning">
+                    ⚠️ Windows nhưng không có giọng Việt! Cần cài đặt thêm.
+                </div>`;
+            }
+            
+            displayResults('systemResults', html);
+        }
+
+        function showWindowsInstructions() {
+            const instructions = `
+                <h4>📝 Hướng dẫn cài đặt giọng tiếng Việt trên Windows:</h4>
+                <div class="info">
+                    <strong>Cách 1: Qua Settings</strong><br>
+                    1. Mở Settings (Win + I)<br>
+                    2. Vào Time & Language → Speech<br>
+                    3. Thêm Vietnamese language pack<br>
+                    4. Download speech components<br><br>
+                    
+                    <strong>Cách 2: Qua Control Panel</strong><br>
+                    1. Mở Control Panel<br>
+                    2. Vào Speech Recognition<br>
+                    3. Text to Speech tab<br>
+                    4. Install Vietnamese voices<br><br>
+                    
+                    <strong>Cách 3: Download trực tiếp</strong><br>
+                    1. Tìm "Microsoft Vietnamese Speech Platform"<br>
+                    2. Download từ Microsoft<br>
+                    3. Cài đặt và restart máy
+                </div>
+            `;
+            
+            document.getElementById('systemResults').innerHTML += instructions;
+        }
+
+        // Bước 4: Test thủ công
+        function testAllVoicesManually() {
+            const text = document.getElementById('testText').value;
+            let html = '<h4>🎤 Kết quả test thủ công:</h4>';
+            
+            if (allVoices.length === 0) {
+                html += '<div class="error">❌ Chưa có danh sách giọng nói!</div>';
+                displayResults('manualResults', html);
+                return;
+            }
+            
+            html += `<div class="info">Sẽ test ${allVoices.length} giọng với text: "${text}"</div>`;
+            
+            allVoices.forEach((voice, index) => {
+                const isVietnamese = checkIfVietnamese(voice);
+                setTimeout(() => {
+                    testSingleVoice(index, text, `Voice ${index + 1}/${allVoices.length}: ${voice.name}`);
+                }, index * 3000);
+                
+                html += `<div class="${isVietnamese ? 'voice-item' : 'info'}">
+                    ${isVietnamese ? '🇻🇳' : '🌐'} ${voice.name} - Sẽ test sau ${index * 3} giây
+                </div>`;
+            });
+            
+            displayResults('manualResults', html);
+        }
+
+        function testSingleVoice(index, customText = null, logPrefix = '') {
+            const voice = allVoices[index];
+            const text = customText || document.getElementById('testText').value || 'Test giọng nói';
+            
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = voice;
+            utterance.lang = voice.lang || 'vi-VN';
+            utterance.rate = 0.8;
+            utterance.pitch = 1.2;
+            utterance.volume = 1.0;
+            
+            utterance.onstart = () => {
+                console.log(`🔊 ${logPrefix} Bắt đầu: ${voice.name}`);
+            };
+            
+            utterance.onend = () => {
+                console.log(`✅ ${logPrefix} Hoàn thành: ${voice.name}`);
+            };
+            
+            utterance.onerror = (e) => {
+                console.log(`❌ ${logPrefix} Lỗi: ${voice.name} - ${e.error}`);
+            };
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        function testVietnameseVoice(index) {
+            if (vietnameseVoices[index]) {
+                const voiceIndex = allVoices.indexOf(vietnameseVoices[index]);
+                testSingleVoice(voiceIndex);
+            }
+        }
+
+        function testWithFallback() {
+            const text = document.getElementById('testText').value;
+            
+            // Strategy 1: Tìm giọng Việt tốt nhất
+            let bestVoice = vietnameseVoices.find(v => 
+                v.name.toLowerCase().includes('mai') ||
+                v.name.toLowerCase().includes('linh')
+            ) || vietnameseVoices[0];
+            
+            if (bestVoice) {
+                console.log('✅ Sử dụng giọng Việt:', bestVoice.name);
+                const voiceIndex = allVoices.indexOf(bestVoice);
+                testSingleVoice(voiceIndex, text, 'BEST VIETNAMESE: ');
+                updateFinalResults('success', `✅ Đã test thành công với giọng: ${bestVoice.name}`);
+                return;
+            }
+            
+            // Strategy 2: Fallback về giọng mặc định
+            console.log('⚠️ Không có giọng Việt, sử dụng giọng mặc định');
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'vi-VN';
+            utterance.rate = 0.8;
+            
+            utterance.onstart = () => console.log('🔊 Fallback: Bắt đầu với giọng mặc định');
+            utterance.onend = () => console.log('✅ Fallback: Hoàn thành');
+            utterance.onerror = (e) => {
+                console.log('❌ Fallback cũng thất bại:', e.error);
+                updateFinalResults('error', '❌ Tất cả phương pháp đều thất bại!');
+            };
+            
+            speechSynthesis.speak(utterance);
+            updateFinalResults('warning', '⚠️ Đang sử dụng giọng mặc định (không phải tiếng Việt)');
+        }
+
+        function updateFinalResults(type, message) {
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning';
+            displayResults('finalResults', `<div class="${className}">${message}</div>`);
+        }
+
+        // Khởi tạo
+        window.onload = function() {
+            console.log('🚀 Bắt đầu chẩn đoán giọng tiếng Việt...');
+            
+            // Force load voices
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = scanAllVoices;
+            }
+            
+            // Auto scan after delay
+            setTimeout(scanAllVoices, 1000);
+        };
+    </script>
+</body>
+</html>
