@@ -421,6 +421,30 @@
       document.getElementById('result').innerText =
         `Bạn đã đăng ký thành công số ${lastNumber} cho lĩnh vực "${lastService}".`;
       closeModal();
+
+      // In tự động chỉ thông tin số thứ tự qua máy in POS
+      const printWindow = window.open('', '', 'width=400,height=300');
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>In số thứ tự</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; margin-top: 40px; }
+            .number { font-size: 60px; font-weight: bold; margin-bottom: 20px; }
+            .service { font-size: 22px; margin-bottom: 10px; }
+            .thanks { font-size: 18px; margin-top: 30px; }
+          </style>
+        </head>
+        <body>
+          <div class="number">Số: ${lastNumber}</div>
+          <div class="service">Lĩnh vực: ${lastService}</div>
+          <div class="thanks">Cảm ơn quý khách!</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
     }
   </script>
 </body>
