@@ -1,3 +1,33 @@
+// Đổi mật khẩu
+app.post('/change-password', async (req, res) => {
+  try {
+    const { username, oldPassword, newPassword } = req.body;
+    if (!username || !oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Thiếu thông tin đổi mật khẩu' });
+    }
+    const user = await User.findOne({ username, password: oldPassword });
+    if (!user) {
+      return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu cũ' });
+    }
+    user.password = newPassword;
+    await user.save();
+    res.json({ success: true, message: 'Đổi mật khẩu thành công' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Lỗi server khi đổi mật khẩu' });
+  }
+});
+// User Schema
+const userSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+  service: String,
+  role: String
+}, { versionKey: false });
+const User = mongoose.model('User', userSchema);
+// Remove duplicate and broken /ratings-report routes
+// Keeping only the correct async MongoDB-based route
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -10,443 +40,9 @@ const queueSchema = new mongoose.Schema({
   queue: [String],
   currentNumber: { type: Number, default: 0 }
 }, { versionKey: false });
-const QueueModel = mongoose.model('Queue', queueSchema);
-const app = express();
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0'; // Cho phép truy cập từ mọi IP trong mạng
-
-app.use(express.json());
-app.use(express.static('public'));
-
-// File paths (chỉ dùng cho users)
-const usersFile = path.join(__dirname, 'users.json');
-
-// MongoDB connection
-const mongoUri = 'mongodb+srv://dinhtoai1:Toai0211@cluster0.necnpeu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('✅ Đã kết nối MongoDB'))
-  .catch(err => console.error('❌ Lỗi kết nối MongoDB:', err));
-
-// MongoDB Schemas
-const ratingSchema = new mongoose.Schema({
-  service: String,
-  serviceRating: Number,
-  time: Number,
-  attitude: Number,
-  overall: Number,
-  comment: String,
-  customerCode: String,
-  timestamp: { type: Date, default: Date.now },
-  id: Number
-}, { versionKey: false });
-
-const Rating = mongoose.model('Rating', ratingSchema);
-
-const historySchema = new mongoose.Schema({
-  service: String,
-  number: String,
-  time: { type: Date, default: Date.now },
-  isRecall: Boolean
-}, { versionKey: false });
-
-const History = mongoose.model('History', historySchema);
-
-// Service configuration
-const SERVICES = [
-  "Chứng thực - Hộ tịch",
-  "Văn thư", 
-  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội",
-  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương"
-];
-
-const prefixMap = {
-  [SERVICES[0]]: "1",
-  [SERVICES[1]]: "2", 
-  [SERVICES[2]]: "3",
-  [SERVICES[3]]: "4"
-};
-
-// Initialize data structures (queue in RAM, reset mỗi ngày)
-let queue = {};
-let currentNumber = {};
-let latestCalls = {};
-
-// Load queue & currentNumber from MongoDB
-async function loadQueueFromDB() {
-  const all = await QueueModel.find({});
-  SERVICES.forEach(service => {
-    const found = all.find(q => q.service === service);
-    queue[service] = found ? found.queue : [];
-    currentNumber[service] = found ? found.currentNumber : 0;
-    latestCalls[service] = null;
-  });
-}
-
-// Save queue & currentNumber to MongoDB
-async function saveQueueToDB(service) {
-  await QueueModel.findOneAndUpdate(
-    { service },
-    { service, queue: queue[service], currentNumber: currentNumber[service] },
-    { upsert: true }
-  );
-}
-
-// Reset queue & currentNumber in DB
-async function resetQueueAndCurrentNumber() {
-  SERVICES.forEach(service => {
-    queue[service] = [];
-    currentNumber[service] = 0;
-    latestCalls[service] = null;
-  });
-  await QueueModel.deleteMany({});
-}
-
-// Khi server start, load queue từ DB
-loadQueueFromDB();
-
-// Cron job: reset queue/history mỗi ngày lúc 0h00
-cron.schedule('0 0 * * *', async () => {
-  console.log('🕛 Đang reset queue và xóa history cũ...');
-  await resetQueueAndCurrentNumber();
+app.get('/ratings-report', async (req, res) => {
   try {
-    await History.deleteMany({});
-    console.log('✅ Đã xóa toàn bộ history trong MongoDB');
-  } catch (err) {
-    console.error('❌ Lỗi khi xóa history:', err);
-  }
-});
-
-// Utility functions for MongoDB
-async function saveHistory(entry) {
-  try {
-    await History.create(entry);
-    return true;
-  } catch (err) {
-    console.error('Lỗi lưu history:', err);
-    return false;
-  }
-}
-
-async function saveRating(rating) {
-  try {
-    if (!rating.id) rating.id = Date.now();
-    if (!rating.timestamp) rating.timestamp = new Date();
-    await Rating.create(rating);
-    return true;
-  } catch (err) {
-    console.error('Lỗi lưu rating:', err);
-    return false;
-  }
-}
-
-function isValidService(service) {
-  return SERVICES.includes(service);
-}
-
-function validateRating(rating) {
-  const { service, serviceRating, time, attitude, overall } = rating;
-  
-  if (!isValidService(service)) {
-    return { valid: false, error: 'Lĩnh vực dịch vụ không hợp lệ' };
-  }
-  
-  const ratings = [serviceRating, time, attitude, overall].map(Number);
-  if (ratings.some(r => isNaN(r) || r < 1 || r > 5)) {
-    return { valid: false, error: 'Điểm đánh giá không hợp lệ (phải từ 1-5)' };
-  }
-  
-  return { valid: true };
-}
-
-// API Routes
-
-// Authentication
-app.post('/login', (req, res) => {
-  try {
-    const users = readJsonFile(usersFile);
-    if (users.length === 0) {
-      return res.status(500).json({ error: 'Không tìm thấy dữ liệu người dùng' });
-    }
-    
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
-    }
-    
-    const user = users.find(u => u.username === username && u.password === password);
-    if (!user) {
-      return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu' });
-    }
-    
-    res.json({ service: user.service });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Lỗi server khi đăng nhập' });
-  }
-});
-
-// Queue Management
-app.post('/get-number', async (req, res) => {
-  try {
-    const { service } = req.body;
-    if (!isValidService(service)) {
-      return res.status(400).json({ 
-        error: 'Lĩnh vực dịch vụ không hợp lệ', 
-        availableServices: SERVICES 
-      });
-    }
-    const number = queue[service].length + 1;
-    const code = `${prefixMap[service]}${number.toString().padStart(3, '0')}`;
-    queue[service].push(code);
-    await saveQueueToDB(service);
-    console.log(`📋 Lấy số: ${code} cho dịch vụ: ${service}`);
-    res.json({ number: code });
-  } catch (error) {
-    console.error('Get number error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lấy số' });
-  }
-});
-
-app.post('/call-next', async (req, res) => {
-  try {
-    const { service } = req.body;
-    if (!isValidService(service)) {
-      return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
-    }
-    if (!queue[service] || queue[service].length === 0) {
-      return res.status(404).json({ error: 'Không có khách trong hàng đợi' });
-    }
-    currentNumber[service]++;
-    const code = queue[service].shift();
-    await saveQueueToDB(service);
-    const timestamp = new Date();
-    // Save to history (MongoDB)
-    const record = { service, number: code, time: timestamp, isRecall: false };
-    await saveHistory(record);
-    // Update latest call
-    latestCalls[service] = {
-      number: code,
-      service: service,
-      time: timestamp,
-      isRecall: false
-    };
-    console.log(`📞 Gọi số: ${code} cho dịch vụ: ${service}`);
-    res.json({ number: code });
-  } catch (error) {
-    console.error('Call next error:', error);
-    res.status(500).json({ error: 'Lỗi server khi gọi số' });
-  }
-});
-
-app.post('/recall-last', async (req, res) => {
-  try {
-    const { service } = req.body;
-    if (!isValidService(service)) {
-      return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
-    }
-
-    const latestCall = await History.findOne({ service }).sort({ time: -1 });
-    if (!latestCall) {
-      return res.status(404).json({ error: 'Không có số nào đã được gọi cho lĩnh vực này' });
-    }
-
-    const timestamp = new Date();
-    const recallRecord = {
-      service: service,
-      number: latestCall.number,
-      time: timestamp,
-      isRecall: true
-    };
-    await saveHistory(recallRecord);
-
-    latestCalls[service] = {
-      number: latestCall.number,
-      service: service,
-      time: timestamp,
-      isRecall: true
-    };
-
-    console.log(`🔄 Gọi lại số: ${latestCall.number} cho dịch vụ: ${service}`);
-    res.json({ 
-      success: true, 
-      number: latestCall.number,
-      message: 'Đã gọi lại số thành công'
-    });
-  } catch (error) {
-    console.error('Recall error:', error);
-    res.status(500).json({ error: 'Lỗi server khi gọi lại số' });
-  }
-});
-
-// Statistics and Status
-app.get('/stats', (req, res) => {
-  try {
-    const stats = {};
-    SERVICES.forEach(service => {
-      stats[service] = {
-        waiting: queue[service].length,
-        lastCalled: currentNumber[service]
-      };
-    });
-    res.json(stats);
-  } catch (error) {
-    console.error('Stats error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lấy thống kê' });
-  }
-});
-
-app.get('/latest-calls', async (req, res) => {
-  try {
-    const filteredCalls = {};
-    for (const service of SERVICES) {
-      const latestCall = await History.findOne({ service }).sort({ time: -1 });
-      if (latestCall) {
-        const callTime = new Date(latestCall.time);
-        const now = new Date();
-        const timeDiff = (now - callTime) / (1000 * 60); // phút
-        if (queue[service].length > 0 || timeDiff <= 5) {
-          filteredCalls[service] = {
-            number: latestCall.number,
-            time: latestCall.time,
-            isRecall: latestCall.isRecall || false
-          };
-        } else {
-          filteredCalls[service] = null;
-        }
-      } else {
-        filteredCalls[service] = null;
-      }
-    }
-    res.json(filteredCalls);
-  } catch (error) {
-    console.error('Latest calls error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lấy thông tin lệnh gọi' });
-  }
-});
-
-app.get('/all-counters-status', async (req, res) => {
-  try {
-    // Lấy toàn bộ queue từ MongoDB
-    const queues = await QueueModel.find({});
-    // Lấy toàn bộ lịch sử gọi số từ MongoDB
-    const history = await History.find({}).sort({ time: -1 });
-
-    const countersStatus = SERVICES.map(service => {
-      // Tìm queue của từng service
-      const queueDoc = queues.find(q => q.service === service);
-      const queueArr = queueDoc ? queueDoc.queue : [];
-      // Tìm cuộc gọi gần nhất của service này
-      const latestCall = history.find(entry => entry.service === service);
-
-      let currentCalling = null;
-      if (latestCall) {
-        const callTime = new Date(latestCall.time);
-        const now = new Date();
-        const timeDiff = (now - callTime) / (1000 * 60); // phút
-        if (queueArr.length > 0 || timeDiff <= 5) {
-          currentCalling = {
-            number: latestCall.number,
-            time: latestCall.time,
-            isRecall: latestCall.isRecall || false
-          };
-        }
-      }
-
-      return {
-        service: service,
-        counterNumber: prefixMap[service],
-        currentCalling: currentCalling,
-        waitingCount: queueArr.length,
-        lastUpdated: new Date().toISOString()
-      };
-    });
-
-    res.json({
-      counters: countersStatus,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Counters status error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lấy trạng thái quầy' });
-  }
-});
-
-// API để lấy lịch sử gọi số cho tra cứu mã khách hàng
-app.get('/api/history', async (req, res) => {
-  try {
-    const history = await History.find({}).sort({ time: -1 });
-    res.json(history);
-  } catch (error) {
-    console.error('History API error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lấy lịch sử' });
-  }
-});
-
-// Rating System - Cập nhật để hỗ trợ format mới
-app.post('/submit-rating', async (req, res) => {
-  try {
-    console.log('📝 Nhận đánh giá từ client:', req.body);
-    const { service, serviceRating, time, attitude, overall, comment, customerCode } = req.body;
-    if (!service) {
-      return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
-    }
-    if (!SERVICES.includes(service)) {
-      return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
-    }
-    // Format mới (chỉ có service, overall, comment)
-    if (overall !== undefined && !serviceRating && !time && !attitude) {
-      const overallNumber = Number(overall);
-      if (isNaN(overallNumber) || overallNumber < 1 || overallNumber > 5) {
-        return res.status(400).json({ error: 'Đánh giá phải từ 1 đến 5 sao' });
-      }
-      const newRating = {
-        service,
-        overall: overallNumber,
-        comment: comment || '',
-        customerCode: customerCode || '',
-        timestamp: new Date(),
-        id: Date.now()
-      };
-      console.log('📝 Lưu đánh giá format mới:', newRating);
-      await saveRating(newRating);
-      console.log('✅ Đánh giá mới đã lưu thành công');
-      return res.json({ 
-        success: true, 
-        message: 'Đánh giá đã được lưu thành công'
-      });
-    }
-    // Format cũ (đầy đủ các trường: serviceRating, time, attitude, overall)
-    if (serviceRating !== undefined && time !== undefined && attitude !== undefined && overall !== undefined) {
-      console.log('📝 Xử lý đánh giá format cũ');
-      const rating = {
-        service,
-        serviceRating: Number(serviceRating),
-        time: Number(time),
-        attitude: Number(attitude),
-        overall: Number(overall),
-        comment: comment || '',
-        timestamp: new Date(),
-        id: Date.now()
-      };
-      const validation = validateRating(rating);
-      if (!validation.valid) {
-        return res.status(400).json({ error: validation.error });
-      }
-      await saveRating(rating);
-      console.log('✅ Đánh giá format cũ đã lưu thành công');
-      return res.json({ success: true, message: 'Đánh giá đã được lưu thành công' });
-    }
-    // Nếu không khớp format nào
-    return res.status(400).json({ error: 'Format đánh giá không hợp lệ. Cần có ít nhất service và overall.' });
-  } catch (error) {
-    console.error('❌ Lỗi server khi xử lý đánh giá:', error);
-    res.status(500).json({ error: 'Lỗi server nội bộ' });
-  }
-});
-
-app.get('/ratings-report', (req, res) => {
-  try {
-    const ratings = readJsonFile(ratingsFile);
+    const ratings = await Rating.find({});
     const totalRatings = ratings.length;
     
     if (totalRatings === 0) {
@@ -577,48 +173,210 @@ app.get('/ratings-report', (req, res) => {
       serviceStats,
       ratings: ratings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     });
+// API Routes
+
+// Authentication
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
+    }
+    const user = await User.findOne({ username, password });
+    if (!user) {
+      return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu' });
+    }
+    res.json({ service: user.service, role: user.role });
   } catch (error) {
-    console.error('Ratings report error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lấy báo cáo' });
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Lỗi server khi đăng nhập' });
   }
 });
 
-// API xuất Excel báo cáo đánh giá
-app.get('/export-ratings-excel', async (req, res) => {
+// Queue Management
+app.post('/get-number', async (req, res) => {
   try {
-    const ratings = readJsonFile(ratingsFile);
-    
-    // Tạo workbook mới
-    const workbook = new ExcelJS.Workbook();
-    workbook.properties.title = 'Báo cáo đánh giá dịch vụ';
-    workbook.properties.subject = 'Thống kê và phân tích đánh giá';
-    workbook.properties.creator = 'Hệ thống xếp hàng LaySo';
-    workbook.properties.created = new Date();
+    const { service } = req.body;
+    if (!isValidService(service)) {
+      return res.status(400).json({ 
+        error: 'Lĩnh vực dịch vụ không hợp lệ', 
+        availableServices: SERVICES 
+      });
+    }
+    const number = queue[service].length + 1;
+    const code = `${prefixMap[service]}${number.toString().padStart(3, '0')}`;
+    queue[service].push(code);
+    await saveQueueToDB(service);
+    console.log(`📋 Lấy số: ${code} cho dịch vụ: ${service}`);
+    res.json({ number: code });
+  } catch (error) {
+    console.error('Get number error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy số' });
+  }
+});
 
-    // Sheet 1: Tổng quan
-    const summarySheet = workbook.addWorksheet('Tổng quan', {
-      pageSetup: { orientation: 'landscape', fitToPage: true }
+app.post('/call-next', async (req, res) => {
+  try {
+    const { service } = req.body;
+    if (!isValidService(service)) {
+      return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
+    }
+    if (!queue[service] || queue[service].length === 0) {
+      return res.status(404).json({ error: 'Không có khách trong hàng đợi' });
+    }
+    currentNumber[service]++;
+    const code = queue[service].shift();
+    await saveQueueToDB(service);
+    const timestamp = new Date();
+    // Save to history (MongoDB)
+    const record = { service, number: code, time: timestamp, isRecall: false };
+    await saveHistory(record);
+    // Update latest call
+    latestCalls[service] = {
+      number: code,
+      service: service,
+      time: timestamp,
+      isRecall: false
+    };
+    console.log(`📞 Gọi số: ${code} cho dịch vụ: ${service}`);
+    res.json({ number: code });
+  } catch (error) {
+    console.error('Call next error:', error);
+    res.status(500).json({ error: 'Lỗi server khi gọi số' });
+  }
+});
+
+app.post('/recall-last', async (req, res) => {
+  try {
+    const { service } = req.body;
+    if (!isValidService(service)) {
+      return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
+    }
+
+    const latestCall = await History.findOne({ service }).sort({ time: -1 });
+    if (!latestCall) {
+      return res.status(404).json({ error: 'Không có số nào đã được gọi cho lĩnh vực này' });
+    }
+
+    const timestamp = new Date();
+    const recallRecord = {
+      service: service,
+      number: latestCall.number,
+      time: timestamp,
+      isRecall: true
+    };
+    await saveHistory(recallRecord);
+
+    latestCalls[service] = {
+      number: latestCall.number,
+      service: service,
+      time: timestamp,
+      isRecall: true
+    };
+
+    console.log(`🔄 Gọi lại số: ${latestCall.number} cho dịch vụ: ${service}`);
+    res.json({ 
+      success: true, 
+      number: latestCall.number,
+      message: 'Đã gọi lại số thành công'
     });
+  } catch (error) {
+    console.error('Recall error:', error);
+    res.status(500).json({ error: 'Lỗi server khi gọi lại số' });
+  }
+});
 
-    // Tiêu đề chính
-    summarySheet.mergeCells('A1:H1');
-    const titleCell = summarySheet.getCell('A1');
-    titleCell.value = 'BÁO CÁO ĐÁNH GIÁ CHẤT LƯỢNG DỊCH VỤ';
-    titleCell.font = { size: 16, bold: true, color: { argb: 'FF0066CC' } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F8FF' } };
-    summarySheet.getRow(1).height = 30;
+// Statistics and Status
+app.get('/stats', (req, res) => {
+  try {
+    const stats = {};
+    SERVICES.forEach(service => {
+      stats[service] = {
+        waiting: queue[service].length,
+        lastCalled: currentNumber[service]
+      };
+    });
+    res.json(stats);
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy thống kê' });
+  }
+});
 
-    // Thông tin báo cáo
-    const infoStartRow = 3;
-    summarySheet.getCell(`A${infoStartRow}`).value = 'Thời gian tạo báo cáo:';
-    summarySheet.getCell(`B${infoStartRow}`).value = new Date().toLocaleString('vi-VN');
-    summarySheet.getCell(`A${infoStartRow + 1}`).value = 'Tổng số đánh giá:';
-    summarySheet.getCell(`B${infoStartRow + 1}`).value = ratings.length;
 
-    // Phân loại dữ liệu
-    const oldFormatRatings = ratings.filter(r => r.serviceRating !== undefined);
-    const newFormatRatings = ratings.filter(r => r.serviceRating === undefined && r.overall !== undefined);
+// API để lấy lịch sử gọi số cho tra cứu mã khách hàng
+app.get('/api/history', async (req, res) => {
+  try {
+    const history = await History.find({}).sort({ time: -1 });
+    res.json(history);
+  } catch (error) {
+    console.error('History API error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy lịch sử' });
+  }
+});
+
+// Rating System - Cập nhật để hỗ trợ format mới
+app.post('/submit-rating', async (req, res) => {
+  try {
+    console.log('📝 Nhận đánh giá từ client:', req.body);
+    const { service, serviceRating, time, attitude, overall, comment, customerCode } = req.body;
+    if (!service) {
+      return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
+    }
+    if (!SERVICES.includes(service)) {
+      return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
+    }
+    // Format mới (chỉ có service, overall, comment)
+    if (overall !== undefined && !serviceRating && !time && !attitude) {
+      const overallNumber = Number(overall);
+      if (isNaN(overallNumber) || overallNumber < 1 || overallNumber > 5) {
+        return res.status(400).json({ error: 'Đánh giá phải từ 1 đến 5 sao' });
+      }
+      const newRating = {
+        service,
+        overall: overallNumber,
+        comment: comment || '',
+        customerCode: customerCode || '',
+        timestamp: new Date(),
+        id: Date.now()
+      };
+      console.log('📝 Lưu đánh giá format mới:', newRating);
+      await saveRating(newRating);
+      console.log('✅ Đánh giá mới đã lưu thành công');
+      return res.json({ 
+        success: true, 
+        message: 'Đánh giá đã được lưu thành công'
+      });
+    }
+    // Format cũ (đầy đủ các trường: serviceRating, time, attitude, overall)
+    if (serviceRating !== undefined && time !== undefined && attitude !== undefined && overall !== undefined) {
+      console.log('📝 Xử lý đánh giá format cũ');
+      const rating = {
+        service,
+        serviceRating: Number(serviceRating),
+        time: Number(time),
+        attitude: Number(attitude),
+        overall: Number(overall),
+        comment: comment || '',
+        timestamp: new Date(),
+        id: Date.now()
+      };
+      const validation = validateRating(rating);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+      await saveRating(rating);
+      console.log('✅ Đánh giá format cũ đã lưu thành công');
+      return res.json({ success: true, message: 'Đánh giá đã được lưu thành công' });
+    }
+    // Nếu không khớp format nào
+    return res.status(400).json({ error: 'Format đánh giá không hợp lệ. Cần có ít nhất service và overall.' });
+  } catch (error) {
+    console.error('❌ Lỗi server khi xử lý đánh giá:', error);
+    res.status(500).json({ error: 'Lỗi server nội bộ' });
+  }
+});
+
 
     summarySheet.getCell(`A${infoStartRow + 2}`).value = 'Đánh giá chi tiết (5 tiêu chí):';
     summarySheet.getCell(`B${infoStartRow + 2}`).value = oldFormatRatings.length;

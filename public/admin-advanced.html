@@ -428,6 +428,49 @@
     </div>
   </div>
 
+  <!-- ĐỔI MẬT KHẨU -->
+<div id="changePasswordBox" style="max-width:400px;margin:40px auto;padding:24px;border:1px solid #ccc;border-radius:8px;box-shadow:0 2px 8px #eee">
+  <h3>Đổi mật khẩu</h3>
+  <input id="cp-username" type="text" placeholder="Tên đăng nhập" class="form-control" style="margin-bottom:8px">
+  <input id="cp-old" type="password" placeholder="Mật khẩu cũ" class="form-control" style="margin-bottom:8px">
+  <input id="cp-new" type="password" placeholder="Mật khẩu mới" class="form-control" style="margin-bottom:8px">
+  <button onclick="changePassword()" class="btn btn-primary">Đổi mật khẩu</button>
+  <div id="cp-message" style="margin-top:10px;color:red"></div>
+</div>
+<script>
+function changePassword() {
+  const username = document.getElementById('cp-username').value.trim();
+  const oldPassword = document.getElementById('cp-old').value;
+  const newPassword = document.getElementById('cp-new').value;
+  const msg = document.getElementById('cp-message');
+  msg.textContent = '';
+  if (!username || !oldPassword || !newPassword) {
+    msg.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+    return;
+  }
+  fetch('/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, oldPassword, newPassword })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      msg.style.color = 'green';
+      msg.textContent = 'Đổi mật khẩu thành công!';
+    } else {
+      msg.style.color = 'red';
+      msg.textContent = data.error || 'Đổi mật khẩu thất bại!';
+    }
+  })
+  .catch(() => {
+    msg.style.color = 'red';
+    msg.textContent = 'Lỗi kết nối máy chủ!';
+  });
+}
+</script>
+<!-- END ĐỔI MẬT KHẨU -->
+
   <script>
     // Variables
     let ratingsData = null;
