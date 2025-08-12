@@ -739,7 +739,7 @@
 
     // Hàm kiểm tra và phát âm thanh cho lệnh gọi mới
     function checkForNewCalls() {
-      fetch('/latest-calls')
+  fetch('https://hcctrile.onrender.com/latest-calls')
         .then(res => res.json())
         .then(latestCalls => {
           console.log('📡 Kiểm tra lệnh gọi mới:', latestCalls);
@@ -930,7 +930,7 @@
 
     async function loadCountersStatus() {
       try {
-        const response = await fetch('/all-counters-status');
+  const response = await fetch('https://hcctrile.onrender.com/all-counters-status');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

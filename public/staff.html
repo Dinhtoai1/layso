@@ -278,7 +278,7 @@
     }
 
     function callNext() {
-      fetch('/call-next', {
+  fetch('https://hcctrile.onrender.com/call-next', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service })
@@ -316,7 +316,7 @@
     }
 
     function recallLast() {
-      fetch('/recall-last', {
+  fetch('https://hcctrile.onrender.com/recall-last', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service })
@@ -368,7 +368,7 @@
     }
 
     function loadStats() {
-      fetch('/stats')
+  fetch('https://hcctrile.onrender.com/stats')
         .then(res => res.json())
         .then(data => {
           const tbody = document.getElementById('stats-body');
@@ -393,7 +393,7 @@
     function quickRating(rating) {
       if (confirm(`Xác nhận đánh giá ${rating} sao cho khách hàng vừa phục vụ?`)) {
         // Gửi đánh giá nhanh đến server
-        fetch('/quick-rating', {
+  fetch('https://hcctrile.onrender.com/quick-rating', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -421,7 +421,7 @@
 
     function refreshRatingStats() {
       // Lấy thống kê từ server
-      fetch(`/ratings-stats/${encodeURIComponent(service)}`)
+  fetch(`https://hcctrile.onrender.com/ratings-stats/${encodeURIComponent(service)}`)
         .then(res => res.json())
         .then(stats => {
           // Cập nhật hiển thị số lượng theo từng mức đánh giá

@@ -387,7 +387,7 @@
     async function loadStatistics() {
       console.log('📊 Đang tải thống kê...');
       try {
-        const response = await fetch('/ratings-report');
+  const response = await fetch('https://hcctrile.onrender.com/ratings-report');
         console.log('📡 Response status:', response.status);
         
         if (!response.ok) {
@@ -574,7 +574,7 @@
     }, 30000);
 
     // Test API connection
-    fetch('/ratings-report')
+  fetch('https://hcctrile.onrender.com/ratings-report')
       .then(response => {
         console.log('🔗 Test API kết nối:', response.status);
         if (response.ok) {

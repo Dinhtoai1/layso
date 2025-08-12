@@ -63,7 +63,7 @@
 
                 console.log('📤 Gửi đánh giá hợp lệ:', ratingData);
 
-                const response = await fetch('/submit-rating', {
+                const response = await fetch('https://hcctrile.onrender.com/submit-rating', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -94,7 +94,7 @@
 
                 console.log('📤 Gửi đánh giá thiếu thông tin:', ratingData);
 
-                const response = await fetch('/submit-rating', {
+                const response = await fetch('https://hcctrile.onrender.com/submit-rating', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -125,7 +125,7 @@
 
                 console.log('📤 Gửi đánh giá với điểm không hợp lệ:', ratingData);
 
-                const response = await fetch('/submit-rating', {
+                const response = await fetch('https://hcctrile.onrender.com/submit-rating', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -150,7 +150,7 @@
             try {
                 console.log('📊 Lấy báo cáo đánh giá...');
 
-                const response = await fetch('/ratings-report');
+                const response = await fetch('https://hcctrile.onrender.com/ratings-report');
                 const result = await response.json();
                 
                 if (response.ok) {

@@ -363,7 +363,7 @@
     // Load ratings data
     async function loadRatingsData() {
       try {
-        const response = await fetch('/ratings-report');
+  const response = await fetch('https://hcctrile.onrender.com/ratings-report');
         const data = await response.json();
         ratingsData = data.ratings || [];
         return data;
