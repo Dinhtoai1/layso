@@ -1,3 +1,9 @@
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const ExcelJS = require('exceljs');
+const mongoose = require('mongoose');
+const cron = require('node-cron');
 // Queue & CurrentNumber Schema
 const queueSchema = new mongoose.Schema({
   service: String,
@@ -5,12 +11,6 @@ const queueSchema = new mongoose.Schema({
   currentNumber: { type: Number, default: 0 }
 }, { versionKey: false });
 const QueueModel = mongoose.model('Queue', queueSchema);
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const ExcelJS = require('exceljs');
-const mongoose = require('mongoose');
-const cron = require('node-cron');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0'; // Cho phép truy cập từ mọi IP trong mạng
