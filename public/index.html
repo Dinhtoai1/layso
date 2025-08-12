@@ -389,7 +389,7 @@
     let lastNumber = '';
 
     function getNumber(service) {
-      fetch('/get-number', {
+  fetch('https://layso.onrender.com/get-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service })
@@ -409,8 +409,8 @@
     }
 
     function showModal(message) {
-      document.getElementById('modal-message').innerHTML = message;
-      document.getElementById('modal').style.display = 'flex';
+  document.getElementById('modal-message').innerHTML = message;
+  document.getElementById('modal').style.display = 'flex';
     }
 
     function closeModal() {
@@ -422,9 +422,9 @@
         `Bạn đã đăng ký thành công số ${lastNumber} cho lĩnh vực "${lastService}".`;
       closeModal();
 
-      // In tự động chỉ thông tin số thứ tự qua máy in POS
-      const printWindow = window.open('', '', 'width=400,height=400');
-      printWindow.document.write(`
+  // In tự động chỉ thông tin số thứ tự qua máy in POS
+  const printWindow = window.open('', '', 'width=400,height=400');
+  printWindow.document.write(`
         <html>
         <head>
           <title>In số thứ tự</title>
