@@ -1,3 +1,10 @@
+// Queue & CurrentNumber Schema
+const queueSchema = new mongoose.Schema({
+  service: String,
+  queue: [String],
+  currentNumber: { type: Number, default: 0 }
+}, { versionKey: false });
+const QueueModel = mongoose.model('Queue', queueSchema);
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -64,19 +71,43 @@ let queue = {};
 let currentNumber = {};
 let latestCalls = {};
 
-function resetQueueAndCurrentNumber() {
+// Load queue & currentNumber from MongoDB
+async function loadQueueFromDB() {
+  const all = await QueueModel.find({});
+  SERVICES.forEach(service => {
+    const found = all.find(q => q.service === service);
+    queue[service] = found ? found.queue : [];
+    currentNumber[service] = found ? found.currentNumber : 0;
+    latestCalls[service] = null;
+  });
+}
+
+// Save queue & currentNumber to MongoDB
+async function saveQueueToDB(service) {
+  await QueueModel.findOneAndUpdate(
+    { service },
+    { service, queue: queue[service], currentNumber: currentNumber[service] },
+    { upsert: true }
+  );
+}
+
+// Reset queue & currentNumber in DB
+async function resetQueueAndCurrentNumber() {
   SERVICES.forEach(service => {
     queue[service] = [];
     currentNumber[service] = 0;
     latestCalls[service] = null;
   });
+  await QueueModel.deleteMany({});
 }
-resetQueueAndCurrentNumber();
+
+// Khi server start, load queue từ DB
+loadQueueFromDB();
 
 // Cron job: reset queue/history mỗi ngày lúc 0h00
 cron.schedule('0 0 * * *', async () => {
   console.log('🕛 Đang reset queue và xóa history cũ...');
-  resetQueueAndCurrentNumber();
+  await resetQueueAndCurrentNumber();
   try {
     await History.deleteMany({});
     console.log('✅ Đã xóa toàn bộ history trong MongoDB');
@@ -155,7 +186,7 @@ app.post('/login', (req, res) => {
 });
 
 // Queue Management
-app.post('/get-number', (req, res) => {
+app.post('/get-number', async (req, res) => {
   try {
     const { service } = req.body;
     if (!isValidService(service)) {
@@ -164,11 +195,10 @@ app.post('/get-number', (req, res) => {
         availableServices: SERVICES 
       });
     }
-    
     const number = queue[service].length + 1;
     const code = `${prefixMap[service]}${number.toString().padStart(3, '0')}`;
     queue[service].push(code);
-    
+    await saveQueueToDB(service);
     console.log(`📋 Lấy số: ${code} cho dịch vụ: ${service}`);
     res.json({ number: code });
   } catch (error) {
@@ -183,19 +213,16 @@ app.post('/call-next', async (req, res) => {
     if (!isValidService(service)) {
       return res.status(400).json({ error: 'Lĩnh vực dịch vụ không hợp lệ' });
     }
-    
     if (!queue[service] || queue[service].length === 0) {
       return res.status(404).json({ error: 'Không có khách trong hàng đợi' });
     }
-
     currentNumber[service]++;
     const code = queue[service].shift();
+    await saveQueueToDB(service);
     const timestamp = new Date();
-
     // Save to history (MongoDB)
     const record = { service, number: code, time: timestamp, isRecall: false };
     await saveHistory(record);
-
     // Update latest call
     latestCalls[service] = {
       number: code,
@@ -203,7 +230,6 @@ app.post('/call-next', async (req, res) => {
       time: timestamp,
       isRecall: false
     };
-    
     console.log(`📞 Gọi số: ${code} cho dịch vụ: ${service}`);
     res.json({ number: code });
   } catch (error) {
