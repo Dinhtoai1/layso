@@ -84,7 +84,7 @@
     }
 
     function callNext() {
-  fetch('https://hcctrile.onrender.com/call-next', {
+  fetch('https://layso.onrender.com/call-next', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service })
@@ -116,7 +116,7 @@
     }
 
     function recallLast() {
-  fetch('https://hcctrile.onrender.com/recall-last', {
+  fetch('https://layso.onrender.com/recall-last', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service })
@@ -162,7 +162,7 @@
     }
 
     function loadStats() {
-  fetch('https://hcctrile.onrender.com/stats')
+  fetch('https://layso.onrender.com/stats')
         .then(res => res.json())
         .then(data => {
           const tbody = document.getElementById('stats-body');

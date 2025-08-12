@@ -338,7 +338,7 @@
 
         // Kiểm tra lệnh gọi mới (copy từ hệ thống chính)
         function checkForNewCalls() {
-            fetch('https://hcctrile.onrender.com/latest-calls')
+            fetch('https://layso.onrender.com/latest-calls')
                 .then(res => res.json())
                 .then(latestCalls => {
                     log('📡 Checking for new calls...');
