@@ -324,25 +324,26 @@ app.get('/latest-calls', async (req, res) => {
   }
 });
 
-app.get('/all-counters-status', (req, res) => {
+app.get('/all-counters-status', async (req, res) => {
   try {
+    // Lấy toàn bộ queue từ MongoDB
+    const queues = await QueueModel.find({});
+    // Lấy toàn bộ lịch sử gọi số từ MongoDB
+    const history = await History.find({}).sort({ time: -1 });
+
     const countersStatus = SERVICES.map(service => {
-      const history = readJsonFile(historyFile);
-      const latestCall = history
-        .filter(entry => entry.service === service)
-        .sort((a, b) => new Date(b.time) - new Date(a.time))[0];
-      
-      // Chỉ hiển thị số đang gọi nếu còn khách chờ hoặc cuộc gọi vừa mới (trong vòng 5 phút)
+      // Tìm queue của từng service
+      const queueDoc = queues.find(q => q.service === service);
+      const queueArr = queueDoc ? queueDoc.queue : [];
+      // Tìm cuộc gọi gần nhất của service này
+      const latestCall = history.find(entry => entry.service === service);
+
       let currentCalling = null;
       if (latestCall) {
         const callTime = new Date(latestCall.time);
         const now = new Date();
         const timeDiff = (now - callTime) / (1000 * 60); // phút
-        
-        // Hiển thị số gọi nếu:
-        // 1. Còn khách chờ (có thể đang xử lý khách hiện tại)
-        // 2. Hoặc cuộc gọi trong vòng 5 phút gần đây
-        if (queue[service].length > 0 || timeDiff <= 5) {
+        if (queueArr.length > 0 || timeDiff <= 5) {
           currentCalling = {
             number: latestCall.number,
             time: latestCall.time,
@@ -350,16 +351,16 @@ app.get('/all-counters-status', (req, res) => {
           };
         }
       }
-      
+
       return {
         service: service,
         counterNumber: prefixMap[service],
         currentCalling: currentCalling,
-        waitingCount: queue[service].length,
+        waitingCount: queueArr.length,
         lastUpdated: new Date().toISOString()
       };
     });
-    
+
     res.json({
       counters: countersStatus,
       timestamp: new Date().toISOString()
