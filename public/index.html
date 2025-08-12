@@ -388,24 +388,10 @@
     let lastService = '';
     let lastNumber = '';
 
+    let pendingService = '';
     function getNumber(service) {
-  fetch('https://layso.onrender.com/get-number', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Lỗi lấy số');
-        return res.json();
-      })
-      .then(data => {
-        lastService = service;
-        lastNumber = data.number;
-        showModal(`Số thứ tự của bạn là <b>${data.number}</b><br>Thuộc lĩnh vực <b>${service}</b><br>Bạn xác nhận đăng ký chứ?`);
-      })
-      .catch(() => {
-        document.getElementById('result').innerText = 'Có lỗi xảy ra!';
-      });
+      pendingService = service;
+      showModal(`Bạn xác nhận đăng ký lấy số cho lĩnh vực <b>${service}</b>?`);
     }
 
     function showModal(message) {
@@ -418,83 +404,100 @@
     }
 
     function confirmRegister() {
-      document.getElementById('result').innerText =
-        `Bạn đã đăng ký thành công số ${lastNumber} cho lĩnh vực "${lastService}".`;
-      closeModal();
+      // Gửi API lấy số khi xác nhận
+      fetch('https://layso.onrender.com/get-number', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service: pendingService })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Lỗi lấy số');
+        return res.json();
+      })
+      .then(data => {
+        lastService = pendingService;
+        lastNumber = data.number;
+        document.getElementById('result').innerText =
+          `Bạn đã đăng ký thành công số ${lastNumber} cho lĩnh vực "${lastService}".`;
+        closeModal();
 
-  // In tự động chỉ thông tin số thứ tự qua máy in POS
-  const printWindow = window.open('', '', 'width=400,height=400');
-  printWindow.document.write(`
-        <html>
-        <head>
-          <title>In số thứ tự</title>
-          <style>
-            @media print {
-              @page { size: 80mm 80mm; margin: 0; }
-              body { width: 80mm; height: 80mm; margin: 0; }
-            }
-            body {
-              font-family: Arial, sans-serif;
-              text-align: center;
-              margin: 0;
-              width: 80mm;
-              height: 80mm;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-              box-sizing: border-box;
-              padding: 0;
-            }
-            .number {
-              font-size: 48px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              margin-top: 10px;
-            }
-            .service {
-              font-size: 18px;
-              margin-bottom: 8px;
-              word-break: break-word;
-              max-width: 90%;
-            }
-            .thanks {
-              font-size: 15px;
-              margin-top: 18px;
-            }
-            .divider {
-              border-top: 1px dashed #000;
-              width: 90%;
-              margin: 10px 0;
-            }
-            .logo {
-              width: 40px;
-              height: 40px;
-              margin-bottom: 8px;
-            }
-            .time {
-              font-size: 13px;
-              margin-top: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header-text">
-            <div style="font-size:14px;font-weight:bold;">TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
-            <div style="font-size:13px;">XÃ TRI LỄ, TỈNH LẠNG SƠN</div>
-          </div>
-          <div class="divider"></div>
-          <div class="number">${lastNumber}</div>
-          <div class="service">${lastService}</div>
-          <div class="divider"></div>
-          <!-- Đã bỏ dòng cảm ơn để tăng diện tích in -->
-          <div class="time">${new Date().toLocaleString('vi-VN')}</div>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+        // In tự động chỉ thông tin số thứ tự qua máy in POS
+        const printWindow = window.open('', '', 'width=400,height=400');
+        printWindow.document.write(`
+          <html>
+          <head>
+            <title>In số thứ tự</title>
+            <style>
+              @media print {
+                @page { size: 80mm 80mm; margin: 0; }
+                body { width: 80mm; height: 80mm; margin: 0; }
+              }
+              body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                margin: 0;
+                width: 80mm;
+                height: 80mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+                padding: 0;
+              }
+              .number {
+                font-size: 48px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                margin-top: 10px;
+              }
+              .service {
+                font-size: 18px;
+                margin-bottom: 8px;
+                word-break: break-word;
+                max-width: 90%;
+              }
+              .thanks {
+                font-size: 15px;
+                margin-top: 18px;
+              }
+              .divider {
+                border-top: 1px dashed #000;
+                width: 90%;
+                margin: 10px 0;
+              }
+              .logo {
+                width: 40px;
+                height: 40px;
+                margin-bottom: 8px;
+              }
+              .time {
+                font-size: 13px;
+                margin-top: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header-text">
+              <div style="font-size:14px;font-weight:bold;">TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
+              <div style="font-size:13px;">XÃ TRI LỄ, TỈNH LẠNG SƠN</div>
+            </div>
+            <div class="divider"></div>
+            <div class="number">${lastNumber}</div>
+            <div class="service">${lastService}</div>
+            <div class="divider"></div>
+            <div class="time">${new Date().toLocaleString('vi-VN')}</div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+      })
+      .catch(() => {
+        document.getElementById('result').innerText = 'Có lỗi xảy ra!';
+        closeModal();
+      });
     }
   </script>
 </body>
