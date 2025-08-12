@@ -405,7 +405,7 @@
 
     function confirmRegister() {
       // Gửi API lấy số khi xác nhận
-      fetch('https://layso.onrender.com/get-number', {
+  fetch('/get-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service: pendingService })
