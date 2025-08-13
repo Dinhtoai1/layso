@@ -578,12 +578,13 @@ app.get('/all-counters-status', async (req, res) => {
 // Helper function để map service với số quầy - đã define ở đầu file
 // const serviceToCounter = ...
 
-// Tự động reset số thứ tự mỗi ngày lúc 0h00
+// Tự động reset số thứ tự mỗi ngày lúc 0h00 - CHỈ RESET COUNTER, KHÔNG RESET RATING
 cron.schedule('0 0 * * *', async () => {
   try {
     console.log('🔄 Bắt đầu reset số thứ tự hàng ngày...');
+    // CHỈ reset counter numbers, GIỮ NGUYÊN rating data để đánh giá cán bộ
     await Counter.updateMany({}, { currentNumber: 0 });
-    console.log('✅ Đã reset tất cả số thứ tự về 0');
+    console.log('✅ Đã reset tất cả số thứ tự về 0 (Rating data được bảo toàn)');
   } catch (error) {
     console.error('❌ Lỗi khi reset số thứ tự:', error);
   }
@@ -732,5 +733,54 @@ app.post('/reset-counters', async (req, res) => {
   } catch (error) {
     console.error('Reset counters error:', error);
     res.status(500).json({ error: 'Lỗi server khi reset counters' });
+  }
+});
+
+// API để xem rating history theo thời gian (không bị reset)
+app.get('/ratings-history', async (req, res) => {
+  try {
+    const { service, days = 30 } = req.query;
+    
+    // Tính ngày bắt đầu
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+    
+    let query = { timestamp: { $gte: startDate } };
+    if (service && service !== 'all') {
+      query.service = service;
+    }
+    
+    const ratings = await Rating.find(query)
+      .sort({ timestamp: -1 })
+      .limit(1000);
+    
+    // Thống kê tổng hợp
+    const stats = {
+      totalRatings: ratings.length,
+      averageOverall: ratings.length > 0 ? 
+        ratings.reduce((sum, r) => sum + r.overall, 0) / ratings.length : 0,
+      averageService: ratings.length > 0 ? 
+        ratings.reduce((sum, r) => sum + r.serviceRating, 0) / ratings.length : 0,
+      averageTime: ratings.length > 0 ? 
+        ratings.reduce((sum, r) => sum + r.time, 0) / ratings.length : 0,
+      averageAttitude: ratings.length > 0 ? 
+        ratings.reduce((sum, r) => sum + r.attitude, 0) / ratings.length : 0,
+      ratingDistribution: {
+        1: ratings.filter(r => r.overall === 1).length,
+        2: ratings.filter(r => r.overall === 2).length,
+        3: ratings.filter(r => r.overall === 3).length,
+        4: ratings.filter(r => r.overall === 4).length,
+        5: ratings.filter(r => r.overall === 5).length
+      }
+    };
+    
+    res.json({
+      stats,
+      ratings: ratings.slice(0, 100), // Chỉ trả về 100 rating gần nhất để tránh quá tải
+      queryParams: { service, days }
+    });
+  } catch (error) {
+    console.error('Ratings history error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy lịch sử đánh giá' });
   }
 });
