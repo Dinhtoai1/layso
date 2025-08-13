@@ -368,16 +368,21 @@
     }
 
     function loadStats() {
-  fetch('https://layso.onrender.com/stats')
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+        
+      fetch(`${apiBaseUrl}/stats`)
         .then(res => res.json())
         .then(data => {
           const tbody = document.getElementById('stats-body');
           tbody.innerHTML = '';
-          for (let s in data) {
+          
+          // Chỉ lặp qua serviceStats, không lặp qua toàn bộ data
+          for (let service in data.serviceStats) {
             const row = tbody.insertRow();
-            row.insertCell(0).innerText = s;
-            row.insertCell(1).innerText = data[s].waiting;
-            row.insertCell(2).innerText = data[s].lastCalled || 'Chưa có';
+            row.insertCell(0).innerText = service;
+            row.insertCell(1).innerText = data.serviceStats[service].waiting || 0;
+            row.insertCell(2).innerText = data.serviceStats[service].lastCalled || 'Chưa có';
           }
         });
     }

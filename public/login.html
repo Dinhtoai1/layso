@@ -58,11 +58,11 @@
       })
       .then(data => {
         localStorage.setItem('userType', 'staff');
-        localStorage.setItem('service', data.service);
+        localStorage.setItem('service', data.user.service);
         localStorage.setItem('username', username);
         
         // Kiểm tra nếu là admin thì chuyển đến trang admin
-        if (data.service === 'admin') {
+        if (data.user.service === 'admin') {
           localStorage.setItem('userType', 'admin');
           window.location = 'admin-advanced.html';
         } else {

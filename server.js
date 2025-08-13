@@ -143,8 +143,8 @@ app.get('/stats', async (req, res) => {
       totalRatings,
       totalCounters: counters.length,
       services: SERVICES.length,
-      // Format cho staff.html compatibility
-      ...serviceStats
+      // Chỉ trả về serviceStats, không spread để tránh hiển thị nhiều hàng
+      serviceStats: serviceStats
     });
   } catch (error) {
     console.error('Stats error:', error);
