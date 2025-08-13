@@ -302,10 +302,16 @@
         body: JSON.stringify({ service })
       })
       .then(res => {
-        if (!res.ok) throw new Error('Không còn khách chờ');
+        console.log('Call Next Response Status:', res.status);
+        if (!res.ok) {
+          console.log('Call Next Error - No customers waiting');
+          throw new Error('Không còn khách chờ');
+        }
         return res.json();
       })
       .then(async (data) => {
+        console.log('Call Next Success Data:', data);
+        
         // Lấy số quầy tương ứng
         const counterNumber = serviceToCounter[service] || "1";
         
@@ -316,8 +322,6 @@
           ` (Còn ${data.waitingCount} khách chờ)` : ' (Không còn khách chờ)';
         const message = `✅ Đã gọi số ${data.number} cho "${service}".${waitingText}`;
         document.getElementById('next-result').innerText = message;
-        
-        console.log('Call Next Response:', data); // Debug log
         
         // Gửi thông báo đến popup hiển thị (nếu đang mở)
         if (window.displayWindow && !window.displayWindow.closed) {
@@ -332,6 +336,8 @@
       })
       .catch((error) => {
         console.log('Call next error:', error);
+        console.log('Service:', service);
+        
         if (error.message === 'Không còn khách chờ') {
           document.getElementById('next-result').innerText =
             `⚠️ Chưa có khách nào lấy số cho lĩnh vực "${service}". Vui lòng đợi khách lấy số trước.`;

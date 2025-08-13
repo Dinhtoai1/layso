@@ -162,6 +162,22 @@ app.get('/stats', async (req, res) => {
   }
 });
 
+// Debug endpoint để xem counters data
+app.get('/debug-counters', async (req, res) => {
+  try {
+    const counters = await Counter.find();
+    res.json({
+      message: 'Debug Counter Data',
+      counters: counters,
+      services: SERVICES,
+      serviceToCounter: serviceToCounter
+    });
+  } catch (error) {
+    console.error('Debug counters error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
 // API để lưu rating
 app.post('/submit-rating', async (req, res) => {
   try {
