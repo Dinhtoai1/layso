@@ -26,10 +26,10 @@ const usersFile = path.join(__dirname, 'users.json');
 
 // Helper function để map service với số quầy
 const serviceToCounter = {
-  "Tiếp nhận hồ sơ": "1",
-  "Trả kết quả": "2", 
-  "Tư vấn, hướng dẫn": "3",
-  "Dịch vụ công trực tuyến": "4"
+  "Chứng thực Hộ tịch": "1",
+  "Văn thư": "2", 
+  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
+  "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "4"
 };
 
 function getCounterNumber(service) {
@@ -530,11 +530,16 @@ app.get('/all-counters-status', async (req, res) => {
         
         return {
           service,
+          counterNumber: counterNumber,
+          currentCalling: formattedNumber > 0 ? {
+            number: formattedNumber,
+            time: new Date()
+          } : null,
+          waitingCount: 0, // No queue system
           currentNumber: formattedNumber, // Số hiển thị đã format
           rawNumber: rawNumber, // Số thứ tự gốc
-          waiting: 0, // No queue system, just current number
+          waiting: 0,
           lastCalled: formattedNumber,
-          counterNumber: counterNumber,
           status: 'active'
         };
       })
@@ -679,5 +684,30 @@ app.get('/debug/mongodb', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// API reset counters để khởi tạo lại với service names mới
+app.post('/reset-counters', async (req, res) => {
+  try {
+    // Xóa tất cả counter cũ
+    await Counter.deleteMany({});
+    
+    // Tạo lại counters với service names mới
+    const newCounters = SERVICES.map(service => ({
+      service: service,
+      currentNumber: 0
+    }));
+    
+    await Counter.insertMany(newCounters);
+    
+    res.json({ 
+      success: true, 
+      message: 'Đã reset tất cả counters với service names mới',
+      services: SERVICES
+    });
+  } catch (error) {
+    console.error('Reset counters error:', error);
+    res.status(500).json({ error: 'Lỗi server khi reset counters' });
   }
 });
