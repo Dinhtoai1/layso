@@ -293,7 +293,10 @@
     }
 
     function callNext() {
-  fetch('https://layso.onrender.com/call-next', {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+      
+      fetch(`${apiBaseUrl}/call-next`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service })
@@ -309,8 +312,12 @@
         // Không phát âm thanh ở màn hình staff
         // announceNumber(data.number, counterNumber);
         
-        const message = `Đã gọi số ${data.number} cho lĩnh vực "${service}".`;
+        const waitingText = data.waitingCount !== undefined && data.waitingCount > 0 ? 
+          ` (Còn ${data.waitingCount} khách chờ)` : ' (Không còn khách chờ)';
+        const message = `✅ Đã gọi số ${data.number} cho "${service}".${waitingText}`;
         document.getElementById('next-result').innerText = message;
+        
+        console.log('Call Next Response:', data); // Debug log
         
         // Gửi thông báo đến popup hiển thị (nếu đang mở)
         if (window.displayWindow && !window.displayWindow.closed) {
@@ -400,10 +407,11 @@
           
           // Chỉ lặp qua serviceStats, không lặp qua toàn bộ data
           for (let service in data.serviceStats) {
+            const stats = data.serviceStats[service];
             const row = tbody.insertRow();
             row.insertCell(0).innerText = service;
-            row.insertCell(1).innerText = data.serviceStats[service].waiting || 0;
-            row.insertCell(2).innerText = data.serviceStats[service].lastCalled || 'Chưa có';
+            row.insertCell(1).innerText = stats.waiting || 0; // Số khách chờ
+            row.insertCell(2).innerText = stats.lastCalled || 'Chưa có'; // Số cuối đã gọi
           }
         });
     }

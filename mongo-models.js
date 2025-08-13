@@ -13,7 +13,8 @@ mongoose.connect(mongoUri, {
 // Counter Schema
 const counterSchema = new mongoose.Schema({
   service: { type: String, required: true, unique: true },
-  currentNumber: { type: Number, default: 0 }
+  currentNumber: { type: Number, default: 0 },
+  calledNumber: { type: Number, default: 0 } // Số đã gọi
 }, { versionKey: false });
 
 const Counter = mongoose.model('Counter', counterSchema);

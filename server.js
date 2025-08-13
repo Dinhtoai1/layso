@@ -128,22 +128,32 @@ app.get('/stats', async (req, res) => {
     SERVICES.forEach(service => {
       const counter = counters.find(c => c.service === service);
       const counterNumber = getCounterNumber(service);
-      const rawNumber = counter ? counter.currentNumber : 0;
-      const formattedNumber = rawNumber > 0 ? parseInt(counterNumber) * 1000 + rawNumber : 0;
       
-      serviceStats[service] = {
-        waiting: 0, // Không có queue waiting, chỉ hiển thị số hiện tại
-        lastCalled: formattedNumber, // Số đã format
-        currentNumber: formattedNumber, // Số đã format
-        rawNumber: rawNumber // Số thứ tự gốc
-      };
+      if (counter) {
+        const lastCalledRaw = counter.calledNumber || 0;
+        const lastCalledFormatted = lastCalledRaw > 0 ? parseInt(counterNumber) * 1000 + lastCalledRaw : 0;
+        const waitingCount = counter.currentNumber - counter.calledNumber;
+        
+        serviceStats[service] = {
+          waiting: waitingCount, // Số khách đang chờ
+          lastCalled: lastCalledFormatted > 0 ? lastCalledFormatted : 'Chưa có', // Số cuối đã gọi
+          currentNumber: counter.currentNumber, // Tổng số đã lấy
+          calledNumber: counter.calledNumber // Số đã gọi
+        };
+      } else {
+        serviceStats[service] = {
+          waiting: 0,
+          lastCalled: 'Chưa có',
+          currentNumber: 0,
+          calledNumber: 0
+        };
+      }
     });
     
     res.json({
       totalRatings,
       totalCounters: counters.length,
       services: SERVICES.length,
-      // Chỉ trả về serviceStats, không spread để tránh hiển thị nhiều hàng
       serviceStats: serviceStats
     });
   } catch (error) {
@@ -271,19 +281,29 @@ app.post('/call-next', async (req, res) => {
 
     // Tìm counter cho service này
     let counter = await Counter.findOne({ service });
-    if (!counter || counter.currentNumber === 0) {
+    if (!counter) {
       return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
 
-    // Lấy số hiện tại (không tăng số)
+    // Kiểm tra xem còn số nào để gọi không
+    if (counter.calledNumber >= counter.currentNumber) {
+      return res.status(404).json({ error: 'Không có khách nào đang chờ' });
+    }
+
+    // Tăng số đã gọi lên 1
+    counter.calledNumber += 1;
+    await counter.save();
+
+    // Tạo số hiển thị
     const counterNumber = getCounterNumber(service);
-    const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+    const formattedNumber = parseInt(counterNumber) * 1000 + counter.calledNumber;
     
     res.json({ 
       number: formattedNumber,
-      rawNumber: counter.currentNumber,
+      rawNumber: counter.calledNumber,
       counterNumber: counterNumber,
       service: service,
+      waitingCount: counter.currentNumber - counter.calledNumber,
       message: `Đang gọi số ${formattedNumber} cho dịch vụ ${service}`
     });
   } catch (error) {
@@ -521,15 +541,17 @@ app.get('/latest-calls', async (req, res) => {
     const latestCalls = {};
     
     counters.forEach(counter => {
-      if (counter.currentNumber > 0) {
+      // Chỉ hiển thị số đã gọi, không phải số khách mới lấy
+      if (counter.calledNumber > 0) {
         const counterNumber = getCounterNumber(counter.service);
-        const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+        const formattedNumber = parseInt(counterNumber) * 1000 + counter.calledNumber;
         
         latestCalls[counter.service] = {
           number: formattedNumber,
-          rawNumber: counter.currentNumber,
+          rawNumber: counter.calledNumber,
           time: new Date().toISOString(),
-          counter: counterNumber
+          counter: counterNumber,
+          waitingCount: counter.currentNumber - counter.calledNumber
         };
       }
     });
@@ -583,7 +605,10 @@ cron.schedule('0 0 * * *', async () => {
   try {
     console.log('🔄 Bắt đầu reset số thứ tự hàng ngày...');
     // CHỈ reset counter numbers, GIỮ NGUYÊN rating data để đánh giá cán bộ
-    await Counter.updateMany({}, { currentNumber: 0 });
+    await Counter.updateMany({}, { 
+      currentNumber: 0,
+      calledNumber: 0 
+    });
     console.log('✅ Đã reset tất cả số thứ tự về 0 (Rating data được bảo toàn)');
   } catch (error) {
     console.error('❌ Lỗi khi reset số thứ tự:', error);
@@ -720,7 +745,8 @@ app.post('/reset-counters', async (req, res) => {
     // Tạo lại counters với service names mới
     const newCounters = SERVICES.map(service => ({
       service: service,
-      currentNumber: 0
+      currentNumber: 0,
+      calledNumber: 0
     }));
     
     await Counter.insertMany(newCounters);
