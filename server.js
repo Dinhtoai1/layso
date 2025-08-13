@@ -162,6 +162,35 @@ app.get('/stats', async (req, res) => {
   }
 });
 
+// Database migration - cập nhật schema cho existing records
+async function migrateCounterSchema() {
+  try {
+    console.log('🔄 Checking Counter schema migration...');
+    
+    // Tìm các counter không có lastUpdated field
+    const countersToUpdate = await Counter.find({ lastUpdated: { $exists: false } });
+    
+    if (countersToUpdate.length > 0) {
+      console.log(`📝 Migrating ${countersToUpdate.length} counter records...`);
+      
+      // Update existing records với lastUpdated
+      await Counter.updateMany(
+        { lastUpdated: { $exists: false } },
+        { $set: { lastUpdated: new Date() } }
+      );
+      
+      console.log('✅ Counter schema migration completed');
+    } else {
+      console.log('✅ Counter schema is up to date');
+    }
+  } catch (error) {
+    console.error('❌ Counter migration error:', error);
+  }
+}
+
+// Chạy migration khi server start
+migrateCounterSchema();
+
 // Debug endpoint để xem counters data
 app.get('/debug-counters', async (req, res) => {
   try {
