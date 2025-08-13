@@ -104,6 +104,9 @@
       <button onclick="recallLast()" style="flex: 1; padding: 12px 20px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
         🔄 Gọi lại
       </button>
+      <button onclick="createTestNumber()" style="flex: 1; padding: 12px 20px; background: #9c27b0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+        🧪 Tạo số test
+      </button>
     </div>
     <div id="next-result"></div>
 
@@ -259,11 +262,19 @@
 
     // Kiểm tra đăng nhập
     let service = localStorage.getItem('service');
-    console.log('🔍 Debug service từ localStorage:', service);
+    let userType = localStorage.getItem('userType');
+    let username = localStorage.getItem('username');
+    
+    console.log('🔍 Debug localStorage data:');
+    console.log('   service:', service);
+    console.log('   userType:', userType);
+    console.log('   username:', username);
     console.log('🔍 Debug serviceToCounter mapping:', serviceToCounter);
     
-    if (!service) {
-      console.log('❌ Không có service trong localStorage, chuyển đến login');
+    if (!service || service === 'null' || service === 'undefined') {
+      console.log('❌ Không có service hợp lệ trong localStorage, chuyển đến login');
+      alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      localStorage.clear();
       window.location = 'login.html';
     } else {
       document.getElementById('main').style.display = 'block';
@@ -312,9 +323,15 @@
         
         loadStats();
       })
-      .catch(() => {
-        document.getElementById('next-result').innerText =
-          `Không còn khách chờ ở lĩnh vực "${service}".`;
+      .catch((error) => {
+        console.log('Call next error:', error);
+        if (error.message === 'Không còn khách chờ') {
+          document.getElementById('next-result').innerText =
+            `⚠️ Chưa có khách nào lấy số cho lĩnh vực "${service}". Vui lòng đợi khách lấy số trước.`;
+        } else {
+          document.getElementById('next-result').innerText =
+            `❌ Lỗi: ${error.message || 'Không thể gọi số'}`;
+        }
         loadStats();
       });
     }
@@ -395,6 +412,30 @@
       if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
         localStorage.removeItem('service');
         window.location = 'login.html';
+      }
+    }
+
+    // Tạo số test để kiểm tra workflow
+    function createTestNumber() {
+      if (confirm(`Tạo số test cho lĩnh vực "${service}"?`)) {
+        const apiBaseUrl = window.location.hostname === 'localhost' ? 
+          'http://localhost:3000' : 'https://layso.onrender.com';
+          
+        fetch(`${apiBaseUrl}/get-number`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service })
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('next-result').innerText = 
+            `✅ Đã tạo số test ${data.number} cho lĩnh vực "${service}". Bây giờ có thể gọi khách.`;
+          loadStats();
+        })
+        .catch(error => {
+          document.getElementById('next-result').innerText = 
+            `❌ Lỗi tạo số test: ${error.message}`;
+        });
       }
     }
 
