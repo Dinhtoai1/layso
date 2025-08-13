@@ -185,11 +185,14 @@ async function migrateCounterSchema() {
     }
   } catch (error) {
     console.error('❌ Counter migration error:', error);
+    // Không crash server, chỉ log lỗi
   }
 }
 
-// Chạy migration khi server start
-migrateCounterSchema();
+// Chạy migration khi server start - với timeout để tránh crash
+setTimeout(() => {
+  migrateCounterSchema();
+}, 2000); // Chờ 2 giây sau khi MongoDB connect
 
 // Debug endpoint để xem counters data
 app.get('/debug-counters', async (req, res) => {
