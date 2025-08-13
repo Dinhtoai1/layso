@@ -130,15 +130,21 @@ app.get('/stats', async (req, res) => {
       const counterNumber = getCounterNumber(service);
       
       if (counter) {
-        const lastCalledRaw = counter.calledNumber || 0;
+        // Đảm bảo calledNumber có giá trị (fix cho records cũ)
+        const calledNumber = counter.calledNumber || 0;
+        const currentNumber = counter.currentNumber || 0;
+        
+        const lastCalledRaw = calledNumber;
         const lastCalledFormatted = lastCalledRaw > 0 ? parseInt(counterNumber) * 1000 + lastCalledRaw : 0;
-        const waitingCount = counter.currentNumber - counter.calledNumber;
+        const waitingCount = currentNumber - calledNumber;
+        
+        console.log(`📊 Stats for ${service}: current=${currentNumber}, called=${calledNumber}, waiting=${waitingCount}`);
         
         serviceStats[service] = {
           waiting: waitingCount, // Số khách đang chờ
           lastCalled: lastCalledFormatted > 0 ? lastCalledFormatted : 'Chưa có', // Số cuối đã gọi
-          currentNumber: counter.currentNumber, // Tổng số đã lấy
-          calledNumber: counter.calledNumber // Số đã gọi
+          currentNumber: currentNumber, // Tổng số đã lấy
+          calledNumber: calledNumber // Số đã gọi
         };
       } else {
         serviceStats[service] = {
@@ -357,16 +363,20 @@ app.post('/call-next', async (req, res) => {
       return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
 
-    console.log(`🔍 Call-next debug: service=${service}, currentNumber=${counter.currentNumber}, calledNumber=${counter.calledNumber}`);
+    // Đảm bảo fields có giá trị đúng (fix cho records cũ)
+    const currentNumber = counter.currentNumber || 0;
+    const calledNumber = counter.calledNumber || 0;
+
+    console.log(`🔍 Call-next debug: service=${service}, currentNumber=${currentNumber}, calledNumber=${calledNumber}`);
 
     // Kiểm tra xem còn số nào để gọi không
-    if (counter.calledNumber >= counter.currentNumber) {
-      console.log(`❌ No more customers: calledNumber(${counter.calledNumber}) >= currentNumber(${counter.currentNumber})`);
+    if (calledNumber >= currentNumber) {
+      console.log(`❌ No more customers: calledNumber(${calledNumber}) >= currentNumber(${currentNumber})`);
       return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
 
     // Tăng số đã gọi lên 1
-    counter.calledNumber += 1;
+    counter.calledNumber = calledNumber + 1;
     counter.lastUpdated = new Date();
     await counter.save();
 
