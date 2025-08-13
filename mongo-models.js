@@ -14,7 +14,8 @@ mongoose.connect(mongoUri, {
 const counterSchema = new mongoose.Schema({
   service: { type: String, required: true, unique: true },
   currentNumber: { type: Number, default: 0 },
-  calledNumber: { type: Number, default: 0 } // Số đã gọi
+  calledNumber: { type: Number, default: 0 }, // Số đã gọi
+  lastUpdated: { type: Date, default: Date.now } // Thời gian gọi số cuối
 }, { versionKey: false });
 
 const Counter = mongoose.model('Counter', counterSchema);

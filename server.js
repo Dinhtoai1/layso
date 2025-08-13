@@ -308,6 +308,7 @@ app.post('/call-next', async (req, res) => {
 
     // Tăng số đã gọi lên 1
     counter.calledNumber += 1;
+    counter.lastUpdated = new Date();
     await counter.save();
 
     // Tạo số hiển thị
@@ -550,25 +551,32 @@ app.post('/change-password', async (req, res) => {
   }
 });
 
-// API cho all-counters-display.html
+// API cho all-counters-display.html - chỉ trả về số mới gọi
 app.get('/latest-calls', async (req, res) => {
   try {
     const counters = await Counter.find();
     const latestCalls = {};
+    const now = new Date();
     
     counters.forEach(counter => {
-      // Chỉ hiển thị số đã gọi, không phải số khách mới lấy
-      if (counter.calledNumber > 0) {
-        const counterNumber = getCounterNumber(counter.service);
-        const formattedNumber = parseInt(counterNumber) * 1000 + counter.calledNumber;
+      // Chỉ hiển thị số đã gọi trong 10 giây gần đây
+      if (counter.calledNumber > 0 && counter.lastUpdated) {
+        const timeDiff = now - new Date(counter.lastUpdated);
         
-        latestCalls[counter.service] = {
-          number: formattedNumber,
-          rawNumber: counter.calledNumber,
-          time: new Date().toISOString(),
-          counter: counterNumber,
-          waitingCount: counter.currentNumber - counter.calledNumber
-        };
+        // Chỉ trả về nếu số được gọi trong 10 giây gần đây
+        if (timeDiff <= 10000) { // 10 giây
+          const counterNumber = getCounterNumber(counter.service);
+          const formattedNumber = parseInt(counterNumber) * 1000 + counter.calledNumber;
+          
+          latestCalls[counter.service] = {
+            number: formattedNumber,
+            rawNumber: counter.calledNumber,
+            time: counter.lastUpdated,
+            counter: counterNumber,
+            waitingCount: counter.currentNumber - counter.calledNumber,
+            isRecent: true
+          };
+        }
       }
     });
     
@@ -623,7 +631,8 @@ cron.schedule('0 0 * * *', async () => {
     // CHỈ reset counter numbers, GIỮ NGUYÊN rating data để đánh giá cán bộ
     await Counter.updateMany({}, { 
       currentNumber: 0,
-      calledNumber: 0 
+      calledNumber: 0,
+      lastUpdated: new Date()
     });
     console.log('✅ Đã reset tất cả số thứ tự về 0 (Rating data được bảo toàn)');
   } catch (error) {
@@ -762,7 +771,8 @@ app.post('/reset-counters', async (req, res) => {
     const newCounters = SERVICES.map(service => ({
       service: service,
       currentNumber: 0,
-      calledNumber: 0
+      calledNumber: 0,
+      lastUpdated: new Date()
     }));
     
     await Counter.insertMany(newCounters);
