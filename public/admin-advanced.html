@@ -259,42 +259,6 @@
       box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
     }
 
-    /* Time period buttons */
-    .time-filter {
-      display: flex;
-      gap: 1vh;
-      margin-bottom: 2vh;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .time-btn {
-      background: linear-gradient(135deg, #4c51bf 0%, #667eea 100%);
-      color: white;
-      border: none;
-      padding: 1vh 2vh;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 3px 10px rgba(76, 81, 191, 0.2);
-      min-width: 80px;
-    }
-
-    .time-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(76, 81, 191, 0.3);
-    }
-
-    .time-btn.active {
-      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
-    }
-
-    .time-btn.active:hover {
-      box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
-    }
-
     /* Loading states */
     .loading {
       text-align: center;
@@ -366,25 +330,6 @@
         </div>
       </div>
 
-      <!-- Bộ lọc thời gian -->
-      <div class="time-filter">
-        <button class="time-btn active" data-period="all" onclick="changePeriod('all')">
-          📊 Tất cả
-        </button>
-        <button class="time-btn" data-period="today" onclick="changePeriod('today')">
-          📅 Hôm nay
-        </button>
-        <button class="time-btn" data-period="week" onclick="changePeriod('week')">
-          📆 Tuần này
-        </button>
-        <button class="time-btn" data-period="month" onclick="changePeriod('month')">
-          🗓️ Tháng này
-        </button>
-        <button class="time-btn" data-period="year" onclick="changePeriod('year')">
-          📈 Năm này
-        </button>
-      </div>
-
       <button onclick="loadStatistics()" class="refresh-btn">
         🔄 Cập nhật thống kê
       </button>
@@ -428,106 +373,15 @@
     </div>
   </div>
 
-  <!-- ĐỔI MẬT KHẨU -->
-<div id="changePasswordBox" style="max-width:400px;margin:40px auto;padding:24px;border:1px solid #ccc;border-radius:8px;box-shadow:0 2px 8px #eee">
-  <h3>Đổi mật khẩu</h3>
-  <input id="cp-username" type="text" placeholder="Tên đăng nhập" class="form-control" style="margin-bottom:8px">
-  <input id="cp-old" type="password" placeholder="Mật khẩu cũ" class="form-control" style="margin-bottom:8px">
-  <input id="cp-new" type="password" placeholder="Mật khẩu mới" class="form-control" style="margin-bottom:8px">
-  <button onclick="changePassword()" class="btn btn-primary">Đổi mật khẩu</button>
-  <div id="cp-message" style="margin-top:10px;color:red"></div>
-</div>
-<script>
-function changePassword() {
-  const username = document.getElementById('cp-username').value.trim();
-  const oldPassword = document.getElementById('cp-old').value;
-  const newPassword = document.getElementById('cp-new').value;
-  const msg = document.getElementById('cp-message');
-  msg.textContent = '';
-  if (!username || !oldPassword || !newPassword) {
-    msg.textContent = 'Vui lòng nhập đầy đủ thông tin.';
-    return;
-  }
-  fetch('/change-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, oldPassword, newPassword })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      msg.style.color = 'green';
-      msg.textContent = 'Đổi mật khẩu thành công!';
-    } else {
-      msg.style.color = 'red';
-      msg.textContent = data.error || 'Đổi mật khẩu thất bại!';
-    }
-  })
-  .catch(() => {
-    msg.style.color = 'red';
-    msg.textContent = 'Lỗi kết nối máy chủ!';
-  });
-}
-</script>
-<!-- END ĐỔI MẬT KHẨU -->
-
   <script>
     // Variables
     let ratingsData = null;
-    let currentPeriod = 'all';
 
     // Load statistics on page load
     document.addEventListener('DOMContentLoaded', function() {
       console.log('🚀 Trang admin-advanced đã tải');
       loadStatistics();
     });
-
-    // Change time period
-    function changePeriod(period) {
-      console.log('📅 Đổi khoảng thời gian:', period);
-      currentPeriod = period;
-      
-      // Update active button
-      document.querySelectorAll('.time-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector(`[data-period="${period}"]`).classList.add('active');
-      
-      // Reload statistics with new period
-      loadStatistics();
-    }
-
-    // Filter ratings by time period
-    function filterRatingsByPeriod(ratings, period) {
-      if (period === 'all') return ratings;
-      
-      const now = new Date();
-      const filtered = ratings.filter(rating => {
-        const ratingDate = new Date(rating.timestamp);
-        
-        switch (period) {
-          case 'today':
-            return ratingDate.toDateString() === now.toDateString();
-          
-          case 'week':
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            return ratingDate >= weekAgo;
-          
-          case 'month':
-            return ratingDate.getMonth() === now.getMonth() && 
-                   ratingDate.getFullYear() === now.getFullYear();
-          
-          case 'year':
-            return ratingDate.getFullYear() === now.getFullYear();
-          
-          default:
-            return true;
-        }
-      });
-      
-      console.log(`📊 Lọc ${period}: ${ratings.length} → ${filtered.length} đánh giá`);
-      return filtered;
-    }
 
     // Load and display statistics
     async function loadStatistics() {
@@ -554,59 +408,35 @@ function changePassword() {
 
     // Display overview statistics
     function displayOverviewStats() {
-      console.log('📋 Hiển thị thống kê tổng quan cho period:', currentPeriod);
-      if (!ratingsData || !ratingsData.ratings) {
-        console.log('⚠️ Không có dữ liệu ratings');
+      console.log('📋 Hiển thị thống kê tổng quan');
+      if (!ratingsData || !ratingsData.systemStats) {
+        console.log('⚠️ Không có dữ liệu systemStats');
         return;
       }
 
-      // Filter ratings by current period
-      const filteredRatings = filterRatingsByPeriod(ratingsData.ratings, currentPeriod);
-      const totalFiltered = filteredRatings.length;
+      const { systemStats } = ratingsData;
+      console.log('📊 SystemStats:', systemStats);
       
-      // Calculate statistics for filtered data
-      const overallRatings = filteredRatings.filter(r => r.overall !== undefined);
-      const avgRating = overallRatings.length > 0 
-        ? (overallRatings.reduce((sum, r) => sum + r.overall, 0) / overallRatings.length)
-        : 0;
-
-      // Calculate today and week stats for current context
-      const now = new Date();
-      const todayCount = filteredRatings.filter(r => {
-        const ratingDate = new Date(r.timestamp);
-        return ratingDate.toDateString() === now.toDateString();
-      }).length;
-
-      const weekCount = filteredRatings.filter(r => {
-        const ratingDate = new Date(r.timestamp);
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return ratingDate >= weekAgo;
-      }).length;
-
-      console.log('📊 Stats tính toán:', { totalFiltered, avgRating, todayCount, weekCount });
-      
-      // Update display
-      document.getElementById('totalRatings').textContent = totalFiltered;
-      document.getElementById('avgRating').textContent = avgRating.toFixed(1) + '/5';
-      document.getElementById('todayRatings').textContent = todayCount;
-      document.getElementById('weekRatings').textContent = weekCount;
+      document.getElementById('totalRatings').textContent = systemStats.totalRatings || 0;
+      document.getElementById('avgRating').textContent = (systemStats.totalOverallAverage || 0).toFixed(1) + '/5';
+      document.getElementById('todayRatings').textContent = systemStats.todayRatings || 0;
+      document.getElementById('weekRatings').textContent = systemStats.thisWeekRatings || 0;
     }
 
     // Display star distribution chart
     function displayStarDistribution() {
-      console.log('⭐ Hiển thị phân bố sao cho period:', currentPeriod);
+      console.log('⭐ Hiển thị phân bố sao');
       if (!ratingsData || !ratingsData.ratings) {
         console.log('⚠️ Không có dữ liệu ratings');
         return;
       }
 
-      // Filter ratings by current period
-      const filteredRatings = filterRatingsByPeriod(ratingsData.ratings, currentPeriod);
+      const { ratings } = ratingsData;
       const distribution = {};
       
-      // Count ratings by star for filtered data
+      // Count ratings by star
       for (let i = 1; i <= 5; i++) {
-        distribution[i] = filteredRatings.filter(r => r.overall === i).length;
+        distribution[i] = ratings.filter(r => r.overall === i).length;
       }
 
       const total = Object.values(distribution).reduce((sum, count) => sum + count, 0);
@@ -641,78 +471,60 @@ function changePassword() {
 
     // Display service statistics
     function displayServiceStats() {
-      console.log('🏢 Hiển thị thống kê dịch vụ cho period:', currentPeriod);
-      if (!ratingsData || !ratingsData.ratings) {
-        console.log('⚠️ Không có dữ liệu ratings');
+      console.log('🏢 Hiển thị thống kê dịch vụ');
+      if (!ratingsData || !ratingsData.serviceStats) {
+        console.log('⚠️ Không có dữ liệu serviceStats');
         return;
       }
 
-      // Filter ratings by current period
-      const filteredRatings = filterRatingsByPeriod(ratingsData.ratings, currentPeriod);
+      const { serviceStats } = ratingsData;
       const container = document.getElementById('serviceStats');
       
-      // Get unique services from filtered data
-      const services = [...new Set(filteredRatings.map(r => r.service))];
+      console.log('🏢 ServiceStats:', serviceStats);
       
-      if (services.length === 0) {
-        container.innerHTML = '<h3>🏢 Thống kê theo dịch vụ</h3><div class="loading">Không có dữ liệu trong khoảng thời gian này</div>';
+      if (Object.keys(serviceStats).length === 0) {
+        container.innerHTML = '<h3>🏢 Thống kê theo dịch vụ</h3><div class="loading">Chưa có dữ liệu</div>';
         return;
       }
 
       let html = '<h3>🏢 Thống kê theo dịch vụ</h3>';
 
-      for (const serviceName of services) {
-        const serviceRatings = filteredRatings.filter(r => r.service === serviceName);
-        const overallRatings = serviceRatings.filter(r => r.overall !== undefined);
-        
-        if (overallRatings.length === 0) continue;
-        
-        // Calculate statistics for this service
-        const totalCount = serviceRatings.length;
-        const overallAverage = overallRatings.reduce((sum, r) => sum + r.overall, 0) / overallRatings.length;
-        const starIcons = '⭐'.repeat(Math.round(overallAverage));
-        
-        // Calculate distribution
-        const distribution = {};
-        for (let i = 1; i <= 5; i++) {
-          distribution[`star${i}`] = overallRatings.filter(r => r.overall === i).length;
-        }
-        
-        const hasComments = serviceRatings.filter(r => r.comment && r.comment.trim() !== '').length;
+      for (const [serviceName, stats] of Object.entries(serviceStats)) {
+        const starIcons = '⭐'.repeat(Math.round(stats.overallAverage));
         
         html += `
           <div class="service-item">
             <div class="service-header">
               <div class="service-name">${serviceName}</div>
-              <div class="service-score">${overallAverage.toFixed(1)}/5 ${starIcons}</div>
+              <div class="service-score">${stats.overallAverage.toFixed(1)}/5 ${starIcons}</div>
             </div>
             <div class="service-details">
               <div class="service-detail">
-                <div class="detail-number">${totalCount}</div>
+                <div class="detail-number">${stats.totalCount}</div>
                 <div class="detail-label">Tổng đánh giá</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${distribution.star5}</div>
+                <div class="detail-number">${stats.distribution.star5}</div>
                 <div class="detail-label">5 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${distribution.star4}</div>
+                <div class="detail-number">${stats.distribution.star4}</div>
                 <div class="detail-label">4 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${distribution.star3}</div>
+                <div class="detail-number">${stats.distribution.star3}</div>
                 <div class="detail-label">3 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${distribution.star2}</div>
+                <div class="detail-number">${stats.distribution.star2}</div>
                 <div class="detail-label">2 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${distribution.star1}</div>
+                <div class="detail-number">${stats.distribution.star1}</div>
                 <div class="detail-label">1 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${hasComments}</div>
+                <div class="detail-number">${stats.hasComments}</div>
                 <div class="detail-label">Có nhận xét</div>
               </div>
             </div>

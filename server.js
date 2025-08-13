@@ -101,16 +101,30 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// API thống kê
+// API thống kê tổng quan
 app.get('/stats', async (req, res) => {
   try {
     const totalRatings = await Rating.countDocuments();
-    const totalCounters = await Counter.countDocuments();
+    const counters = await Counter.find();
+    
+    // Tạo stats chi tiết cho từng dịch vụ
+    const serviceStats = {};
+    
+    SERVICES.forEach(service => {
+      const counter = counters.find(c => c.service === service);
+      serviceStats[service] = {
+        waiting: 0, // Không có queue waiting, chỉ hiển thị số hiện tại
+        lastCalled: counter ? counter.currentNumber : 0,
+        currentNumber: counter ? counter.currentNumber : 0
+      };
+    });
     
     res.json({
       totalRatings,
-      totalCounters,
-      services: SERVICES.length
+      totalCounters: counters.length,
+      services: SERVICES.length,
+      // Format cho staff.html compatibility
+      ...serviceStats
     });
   } catch (error) {
     console.error('Stats error:', error);
@@ -186,6 +200,60 @@ app.post('/reset-numbers', async (req, res) => {
   }
 });
 
+// API gọi số tiếp theo (cho staff)
+app.post('/call-next', async (req, res) => {
+  try {
+    const { service } = req.body;
+    if (!service) {
+      return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
+    }
+
+    // Tìm counter cho service này
+    let counter = await Counter.findOne({ service });
+    if (!counter) {
+      counter = new Counter({ service, currentNumber: 0 });
+    }
+
+    // Tăng số thứ tự
+    counter.currentNumber += 1;
+    await counter.save();
+
+    res.json({ 
+      number: counter.currentNumber,
+      service: service,
+      message: `Đã gọi số ${counter.currentNumber} cho dịch vụ ${service}`
+    });
+  } catch (error) {
+    console.error('Call next error:', error);
+    res.status(500).json({ error: 'Lỗi server khi gọi số tiếp theo' });
+  }
+});
+
+// API gọi lại số cuối (cho staff)
+app.post('/recall-last', async (req, res) => {
+  try {
+    const { service } = req.body;
+    if (!service) {
+      return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
+    }
+
+    // Tìm counter cho service này
+    const counter = await Counter.findOne({ service });
+    if (!counter || counter.currentNumber === 0) {
+      return res.status(404).json({ error: 'Chưa có số nào được gọi cho dịch vụ này' });
+    }
+
+    res.json({ 
+      number: counter.currentNumber,
+      service: service,
+      message: `Đã gọi lại số ${counter.currentNumber} cho dịch vụ ${service}`
+    });
+  } catch (error) {
+    console.error('Recall last error:', error);
+    res.status(500).json({ error: 'Lỗi server khi gọi lại số cuối' });
+  }
+});
+
 // API để lấy báo cáo đánh giá - ENDPOINT QUAN TRỌNG
 app.get('/ratings-report', async (req, res) => {
   try {
@@ -237,7 +305,25 @@ app.get('/ratings-report', async (req, res) => {
       data.avgRating = data.count > 0 ? (data.totalRating / data.count).toFixed(1) : 0;
     });
 
+    // Format dữ liệu cho frontend admin-advanced.html
     const result = {
+      systemStats: {
+        totalRatings,
+        averageOverall: totalRatings > 0 ? (totalOverall / totalRatings).toFixed(1) : 0,
+        averageService: totalRatings > 0 ? (totalService / totalRatings).toFixed(1) : 0,
+        averageTime: totalRatings > 0 ? (totalTime / totalRatings).toFixed(1) : 0,
+        averageAttitude: totalRatings > 0 ? (totalAttitude / totalRatings).toFixed(1) : 0
+      },
+      serviceStats: serviceBreakdown,
+      starDistribution: ratingDistribution,
+      recentRatings: ratings.slice(0, 10).map(r => ({
+        service: r.service,
+        overall: r.overall,
+        comment: r.comment,
+        timestamp: r.timestamp,
+        customerCode: r.customerCode
+      })),
+      // Backward compatibility
       totalRatings,
       averageRatings: {
         service: totalRatings > 0 ? (totalService / totalRatings).toFixed(1) : 0,
@@ -246,14 +332,7 @@ app.get('/ratings-report', async (req, res) => {
         overall: totalRatings > 0 ? (totalOverall / totalRatings).toFixed(1) : 0
       },
       serviceBreakdown,
-      ratingDistribution,
-      recentRatings: ratings.slice(0, 10).map(r => ({
-        service: r.service,
-        overall: r.overall,
-        comment: r.comment,
-        timestamp: r.timestamp,
-        customerCode: r.customerCode
-      }))
+      ratingDistribution
     };
 
     console.log('✅ Báo cáo rating hoàn thành');
@@ -300,6 +379,45 @@ app.get('/export-excel', async (req, res) => {
   } catch (error) {
     console.error('Export excel error:', error);
     res.status(500).json({ error: 'Lỗi server khi xuất Excel' });
+  }
+});
+
+// Alias cho export Excel (tương thích với admin page)
+app.get('/export-ratings-excel', async (req, res) => {
+  try {
+    const ratings = await Rating.find().sort({ timestamp: -1 });
+    
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Đánh giá dịch vụ');
+
+    // Header
+    worksheet.addRow(['STT', 'Dịch vụ', 'Đánh giá dịch vụ', 'Thời gian xử lý', 'Thái độ nhân viên', 'Đánh giá chung', 'Góp ý', 'Mã khách hàng', 'Thời gian']);
+
+    // Data
+    ratings.forEach((rating, index) => {
+      worksheet.addRow([
+        index + 1,
+        rating.service || '',
+        rating.serviceRating || 0,
+        rating.time || 0,
+        rating.attitude || 0,
+        rating.overall || 0,
+        rating.comment || '',
+        rating.customerCode || '',
+        rating.timestamp ? new Date(rating.timestamp).toLocaleString('vi-VN') : ''
+      ]);
+    });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=danh-gia-dich-vu.xlsx');
+
+    // Write to response
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Export ratings excel error:', error);
+    res.status(500).json({ error: 'Lỗi server khi xuất Excel đánh giá' });
   }
 });
 
@@ -417,12 +535,15 @@ app.listen(PORT, HOST, () => {
   console.log('📋 Các endpoint có sẵn:');
   console.log('   GET  / - Trang chủ lấy số');
   console.log('   POST /get-number - Lấy số thứ tự mới');
+  console.log('   POST /call-next - Gọi số tiếp theo (Staff)');
+  console.log('   POST /recall-last - Gọi lại số cuối (Staff)');
   console.log('   POST /submit-rating - Gửi đánh giá');
   console.log('   GET  /services - Danh sách dịch vụ');
   console.log('   GET  /current-numbers - Số hiện tại các dịch vụ');
   console.log('   POST /reset-numbers - Reset tất cả số về 0');
   console.log('   GET  /ratings-report - Báo cáo đánh giá nâng cao');
-  console.log('   GET  /export-excel - Xuất Excel');
+  console.log('   GET  /export-excel - Xuất Excel tổng quát');
+  console.log('   GET  /export-ratings-excel - Xuất Excel đánh giá');
   console.log('   POST /login - Đăng nhập');
   console.log('   GET  /stats - Thống kê tổng quan');
   console.log('   POST /change-password - Đổi mật khẩu');
