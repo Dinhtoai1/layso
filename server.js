@@ -15,10 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Các biến cấu hình - CHỈ 4 DỊCH VỤ CHO 4 QUẦY
 const SERVICES = [
-  "Tiếp nhận hồ sơ",
-  "Trả kết quả", 
-  "Tư vấn, hướng dẫn",
-  "Dịch vụ công trực tuyến"
+  "Chứng thực Hộ tịch",
+  "Văn thư", 
+  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội",
+  "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương"
 ];
 
 // File paths
