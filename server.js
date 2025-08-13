@@ -200,6 +200,48 @@ setTimeout(() => {
   migrateCounterSchema();
 }, 2000); // Chờ 2 giây sau khi MongoDB connect
 
+// API clean up database - xóa tất cả và tạo lại sạch
+app.post('/clean-database', async (req, res) => {
+  try {
+    console.log('🧹 Cleaning up database...');
+    
+    // 1. Xóa hoàn toàn tất cả counter records
+    const deleteResult = await Counter.deleteMany({});
+    console.log(`🗑️ Deleted ${deleteResult.deletedCount} old counter records`);
+    
+    // 2. Tạo lại 4 counters sạch với service names chính xác
+    const cleanCounters = SERVICES.map(service => ({
+      service: service,
+      currentNumber: 0,
+      calledNumber: 0,
+      lastUpdated: new Date()
+    }));
+    
+    const insertResult = await Counter.insertMany(cleanCounters);
+    console.log(`✅ Created ${insertResult.length} clean counter records`);
+    
+    // 3. Verify
+    const allCounters = await Counter.find();
+    console.log('📋 Current counters:');
+    allCounters.forEach(c => {
+      console.log(`  - "${c.service}": current=${c.currentNumber}, called=${c.calledNumber}`);
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `Đã clean database - xóa ${deleteResult.deletedCount} records cũ, tạo ${insertResult.length} records mới`,
+      counters: allCounters.map(c => ({
+        service: c.service,
+        currentNumber: c.currentNumber,
+        calledNumber: c.calledNumber
+      }))
+    });
+  } catch (error) {
+    console.error('Clean database error:', error);
+    res.status(500).json({ error: 'Lỗi khi clean database' });
+  }
+});
+
 // API reset nhanh để fix sync issue
 app.post('/fix-counters', async (req, res) => {
   try {
