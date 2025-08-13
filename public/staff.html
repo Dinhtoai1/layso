@@ -312,8 +312,8 @@
         // Lấy số quầy tương ứng
         const counterNumber = serviceToCounter[service] || "1";
         
-        // Không phát âm thanh ở màn hình staff
-        // announceNumber(data.number, counterNumber);
+        // Phát âm thanh khi gọi số mới
+        announceNumber(data.number, counterNumber);
         
         const waitingText = data.waitingCount !== undefined && data.waitingCount > 0 ? 
           ` (Còn ${data.waitingCount} khách chờ)` : ' (Không còn khách chờ)';
@@ -360,8 +360,8 @@
         // Lấy số quầy tương ứng
         const counterNumber = serviceToCounter[service] || "1";
         
-        // Không phát âm thanh ở màn hình staff
-        // announceNumber(data.number, counterNumber);
+        // Phát âm thanh khi gọi lại
+        announceNumber(data.number, counterNumber);
         
         const message = `Đã gọi lại số ${data.number} cho lĩnh vực "${service}".`;
         document.getElementById('next-result').innerText = message;
