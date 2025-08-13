@@ -36,6 +36,19 @@ function getCounterNumber(service) {
   return serviceToCounter[service] || "1";
 }
 
+// Normalize service name để tránh encoding issues
+function normalizeServiceName(serviceName) {
+  // Map các encoding khác nhau về tên chuẩn
+  const serviceMap = {
+    "Ch?ng th?c H? t?ch": "Chứng thực Hộ tịch",
+    "Chứng thực - Hộ tịch": "Chứng thực Hộ tịch",
+    "V?n th?": "Văn thư",
+    // Thêm các mapping khác nếu cần
+  };
+  
+  return serviceMap[serviceName] || serviceName;
+}
+
 // Serve static files
 app.use(express.static('public'));
 
@@ -51,16 +64,20 @@ const User = mongoose.model('User', userSchema);
 // API để lấy số mới
 app.post('/get-number', async (req, res) => {
   try {
-    const { service } = req.body;
+    let { service } = req.body;
     if (!service) {
       return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
     }
+
+    // Fix encoding - normalize service name
+    service = normalizeServiceName(service);
+    console.log(`🔍 Get-number: original="${req.body.service}", normalized="${service}"`);
 
     // Tìm counter cho service này
     let counter = await Counter.findOne({ service });
     if (!counter) {
       // Tạo mới nếu chưa có
-      counter = new Counter({ service, currentNumber: 0 });
+      counter = new Counter({ service, currentNumber: 0, calledNumber: 0 });
     }
 
     // Tăng số thứ tự
@@ -126,8 +143,9 @@ app.get('/stats', async (req, res) => {
     const serviceStats = {};
     
     SERVICES.forEach(service => {
-      const counter = counters.find(c => c.service === service);
-      const counterNumber = getCounterNumber(service);
+      const normalizedService = normalizeServiceName(service);
+      const counter = counters.find(c => normalizeServiceName(c.service) === normalizedService);
+      const counterNumber = getCounterNumber(normalizedService);
       
       if (counter) {
         // Đảm bảo calledNumber có giá trị (fix cho records cũ)
@@ -138,16 +156,16 @@ app.get('/stats', async (req, res) => {
         const lastCalledFormatted = lastCalledRaw > 0 ? parseInt(counterNumber) * 1000 + lastCalledRaw : 0;
         const waitingCount = currentNumber - calledNumber;
         
-        console.log(`📊 Stats for ${service}: current=${currentNumber}, called=${calledNumber}, waiting=${waitingCount}`);
+        console.log(`📊 Stats for ${normalizedService}: current=${currentNumber}, called=${calledNumber}, waiting=${waitingCount}`);
         
-        serviceStats[service] = {
+        serviceStats[normalizedService] = {
           waiting: waitingCount, // Số khách đang chờ
           lastCalled: lastCalledFormatted > 0 ? lastCalledFormatted : 'Chưa có', // Số cuối đã gọi
           currentNumber: currentNumber, // Tổng số đã lấy
           calledNumber: calledNumber // Số đã gọi
         };
       } else {
-        serviceStats[service] = {
+        serviceStats[normalizedService] = {
           waiting: 0,
           lastCalled: 'Chưa có',
           currentNumber: 0,
@@ -399,8 +417,12 @@ app.post('/call-next', async (req, res) => {
       return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
     }
 
+    // Normalize service name để tránh encoding issues
+    const normalizedService = normalizeServiceName(service);
+    console.log(`🔧 Service normalization: "${service}" -> "${normalizedService}"`);
+
     // Tìm counter cho service này
-    let counter = await Counter.findOne({ service });
+    let counter = await Counter.findOne({ service: normalizedService });
     if (!counter) {
       return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
@@ -409,7 +431,7 @@ app.post('/call-next', async (req, res) => {
     const currentNumber = counter.currentNumber || 0;
     const calledNumber = counter.calledNumber || 0;
 
-    console.log(`🔍 Call-next debug: service=${service}, currentNumber=${currentNumber}, calledNumber=${calledNumber}`);
+    console.log(`🔍 Call-next debug: service=${normalizedService}, currentNumber=${currentNumber}, calledNumber=${calledNumber}`);
 
     // Kiểm tra xem còn số nào để gọi không
     if (calledNumber >= currentNumber) {
@@ -422,25 +444,27 @@ app.post('/call-next', async (req, res) => {
     counter.lastUpdated = new Date();
     await counter.save();
 
-    console.log(`✅ Called number ${counter.calledNumber} for service ${service}`);
+    console.log(`✅ Called number ${counter.calledNumber} for service ${normalizedService}`);
 
     // Tạo số hiển thị
-    const counterNumber = getCounterNumber(service);
+    const counterNumber = getCounterNumber(normalizedService);
     const formattedNumber = parseInt(counterNumber) * 1000 + counter.calledNumber;
     
     res.json({ 
       number: formattedNumber,
       rawNumber: counter.calledNumber,
       counterNumber: counterNumber,
-      service: service,
+      service: normalizedService,
       waitingCount: counter.currentNumber - counter.calledNumber,
-      message: `Đang gọi số ${formattedNumber} cho dịch vụ ${service}`
+      message: `Đang gọi số ${formattedNumber} cho dịch vụ ${normalizedService}`
     });
   } catch (error) {
     console.error('Call next error:', error);
     res.status(500).json({ error: 'Lỗi server khi gọi số tiếp theo' });
   }
 });
+
+// API gọi lại số cuối (cho staff)
 
 // API gọi lại số cuối (cho staff)
 app.post('/recall-last', async (req, res) => {
