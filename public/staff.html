@@ -259,7 +259,11 @@
 
     // Kiểm tra đăng nhập
     let service = localStorage.getItem('service');
+    console.log('🔍 Debug service từ localStorage:', service);
+    console.log('🔍 Debug serviceToCounter mapping:', serviceToCounter);
+    
     if (!service) {
+      console.log('❌ Không có service trong localStorage, chuyển đến login');
       window.location = 'login.html';
     } else {
       document.getElementById('main').style.display = 'block';

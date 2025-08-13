@@ -180,6 +180,34 @@ app.post('/submit-rating', async (req, res) => {
   }
 });
 
+// API quick-rating cho staff
+app.post('/quick-rating', async (req, res) => {
+  try {
+    const { service, rating } = req.body;
+    
+    if (!service || !rating) {
+      return res.status(400).json({ error: 'Thiếu thông tin đánh giá' });
+    }
+
+    const newRating = new Rating({
+      service,
+      serviceRating: rating,
+      time: rating,
+      attitude: rating,
+      overall: rating,
+      comment: `Đánh giá nhanh ${rating} sao`,
+      customerCode: '',
+      timestamp: new Date()
+    });
+
+    await newRating.save();
+    res.json({ success: true, message: `Đã lưu đánh giá ${rating} sao` });
+  } catch (error) {
+    console.error('Quick rating error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lưu đánh giá nhanh' });
+  }
+});
+
 // Endpoint để lấy danh sách dịch vụ
 app.get('/services', (req, res) => {
   res.json(SERVICES);
@@ -243,25 +271,20 @@ app.post('/call-next', async (req, res) => {
 
     // Tìm counter cho service này
     let counter = await Counter.findOne({ service });
-    if (!counter) {
-      counter = new Counter({ service, currentNumber: 0 });
+    if (!counter || counter.currentNumber === 0) {
+      return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
 
-    // Tăng số thứ tự
-    counter.currentNumber += 1;
-    
-    // Tạo số theo format [MãQuầy][SốThứTự]
+    // Lấy số hiện tại (không tăng số)
     const counterNumber = getCounterNumber(service);
     const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
     
-    await counter.save();
-
     res.json({ 
       number: formattedNumber,
       rawNumber: counter.currentNumber,
       counterNumber: counterNumber,
       service: service,
-      message: `Đã gọi số ${formattedNumber} cho dịch vụ ${service}`
+      message: `Đang gọi số ${formattedNumber} cho dịch vụ ${service}`
     });
   } catch (error) {
     console.error('Call next error:', error);
