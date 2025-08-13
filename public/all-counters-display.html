@@ -559,6 +559,9 @@
 
       // Biến theo dõi lệnh gọi gần nhất để phát âm thanh
       let lastKnownCalls = {};
+      
+      // Biến theo dõi các số đã phát âm thanh để tránh lặp lại
+      let announcedNumbers = new Set();
 
       // Hàm kiểm tra và phát âm thanh cho lệnh gọi mới
       function checkForNewCalls() {
@@ -576,18 +579,27 @@
             for (const service in latestCalls) {
               const latestCall = latestCalls[service];
               if (latestCall && latestCall.number) {
-                const lastKnown = lastKnownCalls[service];
+                const callId = `${service}-${latestCall.number}-${latestCall.time}`;
                 
-                if (!lastKnown || 
-                    lastKnown.number !== latestCall.number || 
-                    lastKnown.time !== latestCall.time) {
-                  
+                // Kiểm tra xem số này đã được phát chưa
+                if (!announcedNumbers.has(callId)) {
                   console.log(`🆕 Phát hiện lệnh gọi mới cho ${service}!`);
                   
                   const counterNumber = serviceToCounter[service];
                   if (counterNumber) {
                     console.log(`🔔 Phát thông báo cho lệnh gọi mới: ${latestCall.number} - Quầy ${counterNumber}${latestCall.isRecall ? ' (Gọi lại)' : ''}`);
                     announceNumber(latestCall.number, counterNumber, latestCall.isRecall || false);
+                    
+                    // Đánh dấu số này đã được phát
+                    announcedNumbers.add(callId);
+                    console.log(`✅ Đã đánh dấu số ${latestCall.number} đã phát, tổng đã phát: ${announcedNumbers.size}`);
+                    
+                    // Xóa các callId cũ để tránh memory leak (giữ lại 100 số gần nhất)
+                    if (announcedNumbers.size > 100) {
+                      const oldestEntries = Array.from(announcedNumbers).slice(0, 50);
+                      oldestEntries.forEach(id => announcedNumbers.delete(id));
+                      console.log(`🧹 Đã dọn dẹp 50 callId cũ, còn lại: ${announcedNumbers.size}`);
+                    }
                   } else {
                     console.log(`❌ Không tìm thấy counter number cho service: ${service}`);
                   }
@@ -596,6 +608,8 @@
                     number: latestCall.number,
                     time: latestCall.time
                   };
+                } else {
+                  console.log(`🔇 Bỏ qua số ${latestCall.number} cho ${service} - đã phát rồi`);
                 }
               }
             }
@@ -604,6 +618,25 @@
             console.error('❌ Lỗi khi kiểm tra lệnh gọi mới:', error);
           });
       }
+
+      // Function để reset danh sách số đã phát (cho admin)
+      function resetAnnouncedNumbers() {
+        announcedNumbers.clear();
+        lastKnownCalls = {};
+        speechQueue.length = 0;
+        console.log('🔄 Đã reset tất cả số đã phát. Mọi lệnh gọi sẽ được phát lại.');
+        alert('Đã reset danh sách số đã phát. Mọi lệnh gọi sẽ được phát lại từ đầu.');
+      }
+
+      // Thêm phím tắt Ctrl+R để reset announced numbers
+      document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'r') {
+          e.preventDefault();
+          if (confirm('Reset danh sách số đã phát? Mọi lệnh gọi sẽ được phát lại.')) {
+            resetAnnouncedNumbers();
+          }
+        }
+      });
 
       function updateCurrentTime() {
         try {
@@ -828,8 +861,8 @@
           loadCountersStatus();
           
           setInterval(updateCurrentTime, 1000);
-          setInterval(loadCountersStatus, 3000);
-          setInterval(checkForNewCalls, 2000);
+          setInterval(loadCountersStatus, 5000); // Tăng từ 3s lên 5s
+          setInterval(checkForNewCalls, 4000);   // Tăng từ 2s lên 4s để giảm polling
           
           console.log('✅ Khởi tạo hoàn tất');
         } catch (error) {
