@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trạng thái tất cả quầy dịch vụ</title>
+  <style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1vh;
+    position: relative;
+    z-index: 1;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 2vh 4vh;
+    border-radius: 20px;
+    box-shadow: 
+      0 10px 40px rgba(0,0,0,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.25);
+    flex-shrink: 0;
+    position: relative;
+    height: 14vh;
+  }
+  .logo-section {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .logo-section img {
+    width: 60vh;
+    height: 12vh;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    border-radius: 12px;
+  }
+  .time {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5vh;
+  }
+  .time-hour {
+    font-size: 3.2vh;
+    font-weight: 700;
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5), 0 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 1px;
+  }
+  .time-date {
+    font-size: 1.6vh;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    white-space: nowrap;
+  }
+  .counters-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
+    gap: 2vh;
+    flex: 1;
+    height: calc(100vh - 14vh);
+    padding: 2vh 3vh;
+    justify-content: center;
+    align-content: center;
+    max-width: 100%;
+    margin: 0 auto;
+    place-items: stretch;
+  }
+  .counter-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
+    backdrop-filter: blur(30px);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 1.8vh;
+    border-radius: 20px;
+    box-shadow: 
+      0 12px 40px rgba(0,0,0,0.18),
+      inset 0 2px 0 rgba(255,255,255,0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 0.6vh solid rgba(255,255,255,0.5);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 3/4;
+  }
+  .counter-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .counter-card.active {
+    border-left-color: #00ff88;
+    background: linear-gradient(145deg, rgba(0, 255, 136, 0.2), rgba(0, 255, 136, 0.1));
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 
+      0 20px 60px rgba(0, 255, 136, 0.3),
+      inset 0 2px 0 rgba(255,255,255,0.4);
+  }
+  .counter-card:hover {
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.22);
+  }
+  .counter-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5vh;
+    padding-bottom: 1vh;
+    border-bottom: 2px solid rgba(255,255,255,0.3);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .counter-number {
+    font-size: 3vh;
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.8vh 1.8vh;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.3);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    letter-spacing: 0.5px;
+  }
+  .service-name {
+    display: none;
+  }
+  .current-calling {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+    backdrop-filter: blur(15px);
+    padding: 2vh 1.5vh;
+    border-radius: 15px;
+    margin-bottom: 1vh;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    position: relative;
+    z-index: 1;
+  }
+  .calling-label {
+    font-size: 1.4vh;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 0.8vh;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  .calling-number {
+    font-size: 4.5vh;
+    font-weight: 900;
+    color: #00ff88;
+    margin-bottom: 0.8vh;
+    text-shadow: 
+      0 0 15px rgba(0, 255, 136, 0.6),
+      0 3px 6px rgba(0,0,0,0.5);
+    text-align: center;
+    letter-spacing: 1.5px;
+  }
+  .calling-time {
+    font-size: 1.1vh;
+    color: rgba(255,255,255,0.8);
+    font-style: italic;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    font-weight: 500;
+  }
+  .no-calling {
+    font-size: 2vh;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    font-style: italic;
+    padding: 1.5vh 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    font-weight: 600;
+  }
+  .waiting-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5vh 2vh;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+    backdrop-filter: blur(20px);
+    border-radius: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .waiting-count {
+    font-size: 1.8vh;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
+  }
+  .waiting-number {
+    font-size: 2.5vh;
+    font-weight: 900;
+    color: #ff4757;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 0.8vh 1.5vh;
+    border-radius: 25px;
+    box-shadow: 
+      0 6px 20px rgba(0,0,0,0.25),
+      inset 0 2px 4px rgba(255, 71, 87, 0.2);
+    min-width: 3.5vh;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid rgba(255,71,87,0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .waiting-number.highlight {
+    animation: bounceGlow 0.8s ease;
+    background: #ff9500;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 
+      0 8px 30px rgba(255, 149, 0, 0.5),
+      inset 0 2px 4px rgba(255, 149, 0, 0.3);
+  }
+  .calling-display {
+    transition: all 0.4s ease;
+  }
+  
+  @keyframes bounceGlow {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); box-shadow: 0 0 30px rgba(255, 149, 0, 0.8); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(1.15); }
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes newCall {
+    0% { transform: scale(1) translateY(-5px); background-color: transparent; }
+    25% { transform: scale(1.03) translateY(-8px); background-color: rgba(0, 255, 136, 0.2); }
+    50% { transform: scale(1.02) translateY(-6px); background-color: rgba(0, 255, 136, 0.3); }
+    75% { transform: scale(1.01) translateY(-5px); background-color: rgba(0, 255, 136, 0.1); }
+    100% { transform: scale(1.02) translateY(-5px); background-color: transparent; }
+  }
+  .refresh-animation {
+    animation: fadeInUp 0.6s ease-out;
+  }
+  @keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes bounce {
+    0%, 20%, 60%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-15px); }
+    80% { transform: translateY(-8px); }
+  }
+  @keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(0); }
+    to { transform: translateY(-100%); }
+  }
+  
+  .error-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 0, 0, 0.9);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 10000;
+    display: none;
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-section">
+        <img src="logo.png" alt="Logo Trung tâm">
+      </div>
+      <div class="time" id="currentTime">
+        <div class="time-hour" id="timeHour"></div>
+        <div class="time-date" id="timeDate"></div>
+      </div>
+    </div>
+
+    <div class="counters-grid" id="countersGrid">
+      <!-- Các thẻ quầy sẽ được tạo tự động bằng JavaScript -->
+    </div>
+  </div>
+
+  <div class="error-display" id="errorDisplay">
+    <h3>Lỗi kết nối</h3>
+    <p>Không thể tải dữ liệu từ server</p>
+  </div>
+
+  <script>
+    // Tránh xung đột với các thư viện khác
+    (function() {
+      'use strict';
+      
+      let lastUpdateTime = null;
+      let currentCountersData = {};
+      let lastAnnouncementKey = null;
+      let isSpeaking = false;
+      let speechQueue = [];
+
+      // Error handling
+      window.addEventListener('error', function(e) {
+        console.error('JavaScript Error:', e.error);
+        // Không hiển thị error popup để tránh làm phiền người dùng
+      });
+
+      // Hàm phát âm thanh đơn giản như tiếng gõ cửa
+      function playKnockSound() {
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          
+          const times = [0, 0.15, 0.3];
+          
+          times.forEach(startTime => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(150, audioContext.currentTime + startTime);
+            oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + startTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime + startTime);
+            oscillator.stop(audioContext.currentTime + startTime + 0.1);
+          });
+        } catch (error) {
+          console.log('Không thể phát âm thanh:', error);
+        }
+      }
+
+      // Hàm thông báo bằng giọng nói tiếng Việt
+      function announceNumber(number, counterNumber, isRecall = false) {
+        try {
+          const callKey = `${number}-${counterNumber}-${isRecall}`;
+          
+          // Kiểm tra nếu đang phát âm thanh
+          if (isSpeaking || speechSynthesis.speaking) {
+            console.log(`⏳ Đang phát âm thanh, thêm vào hàng đợi: ${callKey}`);
+            // Không thêm trùng lặp vào queue
+            if (!speechQueue.find(item => `${item.number}-${item.counterNumber}-${item.isRecall}` === callKey)) {
+              speechQueue.push({ number, counterNumber, isRecall });
+            }
+            return;
+          }
+          
+          console.log(`🎤 announceNumber được gọi: số ${number}, quầy ${counterNumber}${isRecall ? ' (Gọi lại)' : ''}`);
+          
+          isSpeaking = true;
+          speechSynthesis.cancel();
+          
+          const message = isRecall 
+            ? `Gọi lại, xin kính mời quý khách có số thứ tự ${number} đến quầy số ${counterNumber} để thực hiện thủ tục hành chính`
+            : `Xin kính mời quý khách có số thứ tự ${number} đến quầy số ${counterNumber} để thực hiện thủ tục hành chính`;
+          
+          console.log('📢 Bắt đầu phát thông báo:', message);
+          
+          const utterance = new SpeechSynthesisUtterance(message);
+          utterance.lang = 'vi-VN';
+          utterance.rate = 0.7;
+          utterance.pitch = 1.1;
+          utterance.volume = 1.0;
+          
+          // Tìm giọng tiếng Việt
+          const voices = speechSynthesis.getVoices();
+          let vietnameseVoice = voices.find(voice => 
+            voice.lang === 'vi-VN' || 
+            voice.lang === 'vi' ||
+            voice.name.toLowerCase().includes('mai') ||
+            voice.name.toLowerCase().includes('linh') ||
+            voice.name.toLowerCase().includes('vietnam')
+          );
+          
+          if (vietnameseVoice) {
+            utterance.voice = vietnameseVoice;
+            console.log(`✅ Sử dụng giọng Việt: ${vietnameseVoice.name} (${vietnameseVoice.lang})`);
+          } else {
+            console.log('⚠️ Không có giọng Việt, sử dụng giọng mặc định');
+          }
+          
+          // Event listeners
+          utterance.onstart = () => {
+            console.log('🔊 BẮT ĐẦU PHÁT ÂM THANH');
+            isSpeaking = true;
+            showAnnouncementBanner(message);
+          };
+          
+          utterance.onend = () => {
+            console.log('✅ HOÀN THÀNH PHÁT ÂM THANH');
+            isSpeaking = false;
+            
+            // Xử lý hàng đợi
+            if (speechQueue.length > 0) {
+              const next = speechQueue.shift();
+              setTimeout(() => {
+                announceNumber(next.number, next.counterNumber, next.isRecall);
+              }, 1000); // Delay 1 giây giữa các thông báo
+            }
+          };
+          
+          utterance.onerror = (e) => {
+            console.log('❌ LỖI PHÁT ÂM:', e.error);
+            isSpeaking = false;
+            playKnockSound();
+            
+            // Xử lý hàng đợi
+            if (speechQueue.length > 0) {
+              const next = speechQueue.shift();
+              setTimeout(() => {
+                announceNumber(next.number, next.counterNumber, next.isRecall);
+              }, 1000);
+            }
+          };
+          
+          console.log('🎯 Đang phát âm thanh...');
+          speechSynthesis.speak(utterance);
+          
+          // Fallback nếu không phát được sau 2 giây
+          setTimeout(() => {
+            if (!speechSynthesis.speaking && isSpeaking) {
+              console.log('⚠️ Speech synthesis không hoạt động, chuyển sang tiếng gõ cửa');
+              isSpeaking = false;
+              playKnockSound();
+            }
+          }, 2000);
+          
+        } catch (error) {
+          console.log('❌ Không thể phát thông báo giọng nói:', error);
+          isSpeaking = false;
+          playKnockSound();
+        }
+      }
+      
+      // Hàm hiển thị banner thông báo trên màn hình
+      function showAnnouncementBanner(message) {
+        const existingBanner = document.getElementById('announcementBanner');
+        if (existingBanner) {
+          existingBanner.remove();
+        }
+        
+        const banner = document.createElement('div');
+        banner.id = 'announcementBanner';
+        banner.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+          color: white;
+          text-align: center;
+          padding: 20px;
+          font-size: 24px;
+          font-weight: bold;
+          z-index: 9999;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+          animation: slideDown 0.5s ease-out;
+        `;
+        banner.innerHTML = `🔊 ${message}`;
+        
+        document.body.appendChild(banner);
+        
+        setTimeout(() => {
+          if (banner.parentNode) {
+            banner.style.animation = 'slideUp 0.5s ease-out';
+            setTimeout(() => banner.remove(), 500);
+          }
+        }, 5000);
+      }
+
+      // Mapping lĩnh vực sang số quầy
+      const serviceToCounter = {
+        "Tiếp nhận hồ sơ": "1",
+        "Trả kết quả": "2", 
+        "Tư vấn, hướng dẫn": "3",
+        "Dịch vụ công trực tuyến": "4"
+      };
+
+      // Biến theo dõi lệnh gọi gần nhất để phát âm thanh
+      let lastKnownCalls = {};
+
+      // Hàm kiểm tra và phát âm thanh cho lệnh gọi mới
+      function checkForNewCalls() {
+        const apiBaseUrl = window.location.hostname === 'localhost' ? 
+          'http://localhost:3000' : 'https://layso.onrender.com';
+          
+        fetch(`${apiBaseUrl}/latest-calls`)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(latestCalls => {
+            console.log('📡 Kiểm tra lệnh gọi mới:', latestCalls);
+            
+            for (const service in latestCalls) {
+              const latestCall = latestCalls[service];
+              if (latestCall && latestCall.number) {
+                const lastKnown = lastKnownCalls[service];
+                
+                if (!lastKnown || 
+                    lastKnown.number !== latestCall.number || 
+                    lastKnown.time !== latestCall.time) {
+                  
+                  console.log(`🆕 Phát hiện lệnh gọi mới cho ${service}!`);
+                  
+                  const counterNumber = serviceToCounter[service];
+                  if (counterNumber) {
+                    console.log(`🔔 Phát thông báo cho lệnh gọi mới: ${latestCall.number} - Quầy ${counterNumber}${latestCall.isRecall ? ' (Gọi lại)' : ''}`);
+                    announceNumber(latestCall.number, counterNumber, latestCall.isRecall || false);
+                  } else {
+                    console.log(`❌ Không tìm thấy counter number cho service: ${service}`);
+                  }
+                  
+                  lastKnownCalls[service] = {
+                    number: latestCall.number,
+                    time: latestCall.time
+                  };
+                }
+              }
+            }
+          })
+          .catch(error => {
+            console.error('❌ Lỗi khi kiểm tra lệnh gọi mới:', error);
+          });
+      }
+
+      function updateCurrentTime() {
+        try {
+          const now = new Date();
+          
+          const timeHour = now.toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+          const hourElement = document.getElementById('timeHour');
+          if (hourElement) hourElement.textContent = timeHour;
+          
+          const timeDate = now.toLocaleDateString('vi-VN', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+          const dateElement = document.getElementById('timeDate');
+          if (dateElement) dateElement.textContent = timeDate;
+        } catch (error) {
+          console.error('Lỗi cập nhật thời gian:', error);
+        }
+      }
+
+      function formatTime(timeString) {
+        try {
+          const date = new Date(timeString);
+          return date.toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+        } catch (error) {
+          return 'N/A';
+        }
+      }
+
+      function formatDate(timeString) {
+        try {
+          const date = new Date(timeString);
+          return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (error) {
+          return 'N/A';
+        }
+      }
+
+      function createCounterCard(counter) {
+        try {
+          const hasCurrentCall = counter.currentCalling !== null;
+          const cardClass = hasCurrentCall ? 'counter-card active' : 'counter-card';
+          
+          return `
+            <div class="${cardClass}" data-service="${counter.service}">
+              <div class="counter-header">
+                <div class="counter-number">QUẦY ${counter.counterNumber}</div>
+              </div>
+              
+              <div class="current-calling">
+                <div class="calling-label">Đang gọi</div>
+                <div class="calling-display">
+                  ${hasCurrentCall ? `
+                    <div class="calling-number">${counter.currentCalling.number}</div>
+                    <div class="calling-time">Gọi lúc: ${formatDate(counter.currentCalling.time)}</div>
+                  ` : `
+                    <div class="no-calling">Chưa có</div>
+                  `}
+                </div>
+              </div>
+              
+              <div class="waiting-info">
+                <span class="waiting-count">Khách đang chờ:</span>
+                <span class="waiting-number">${counter.waitingCount}</span>
+              </div>
+            </div>
+          `;
+        } catch (error) {
+          console.error('Lỗi tạo counter card:', error);
+          return '<div class="counter-card">Lỗi hiển thị</div>';
+        }
+      }
+
+      function updateCounterCard(card, counter) {
+        try {
+          const hasCurrentCall = counter.currentCalling !== null;
+          const oldData = currentCountersData[counter.service];
+          
+          const isNewCall = hasCurrentCall && (!oldData || 
+            !oldData.currentCalling || 
+            oldData.currentCalling.number !== counter.currentCalling.number);
+          
+          if (hasCurrentCall && !card.classList.contains('active')) {
+            card.classList.add('active');
+          } else if (!hasCurrentCall && card.classList.contains('active')) {
+            card.classList.remove('active');
+          }
+          
+          const callingDisplay = card.querySelector('.calling-display');
+          if (callingDisplay) {
+            const newCallingContent = hasCurrentCall ? `
+              <div class="calling-number">${counter.currentCalling.number}</div>
+              <div class="calling-time">Gọi lúc: ${formatDate(counter.currentCalling.time)}</div>
+            ` : `
+              <div class="no-calling">Chưa có</div>
+            `;
+            
+            if (callingDisplay.innerHTML.trim() !== newCallingContent.trim()) {
+              callingDisplay.style.opacity = '0.5';
+              setTimeout(() => {
+                callingDisplay.innerHTML = newCallingContent;
+                callingDisplay.style.opacity = '1';
+              }, 150);
+            }
+          }
+          
+          const waitingNumber = card.querySelector('.waiting-number');
+          if (waitingNumber && waitingNumber.textContent !== counter.waitingCount.toString()) {
+            waitingNumber.style.transform = 'scale(1.2)';
+            waitingNumber.textContent = counter.waitingCount;
+            
+            waitingNumber.classList.add('highlight');
+            setTimeout(() => {
+              waitingNumber.style.transform = 'scale(1)';
+              waitingNumber.classList.remove('highlight');
+            }, 600);
+          }
+          
+          if (isNewCall) {
+            console.log('🆕 Số mới được gọi:', counter.currentCalling.number, 'tại quầy', counter.counterNumber);
+            
+            card.style.animation = 'newCall 2s ease-in-out';
+            setTimeout(() => {
+              card.style.animation = '';
+            }, 2000);
+            
+            const callingNumberElement = card.querySelector('.calling-number');
+            if (callingNumberElement) {
+              callingNumberElement.style.animation = 'pulse 1s ease-in-out 3';
+              setTimeout(() => {
+                callingNumberElement.style.animation = '';
+              }, 3000);
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi cập nhật counter card:', error);
+        }
+      }
+
+      async function loadCountersStatus() {
+        try {
+          const apiBaseUrl = window.location.hostname === 'localhost' ? 
+            'http://localhost:3000' : 'https://layso.onrender.com';
+            
+          const response = await fetch(`${apiBaseUrl}/all-counters-status`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log('📊 Dữ liệu quầy nhận được:', data);
+          
+          const grid = document.getElementById('countersGrid');
+          if (!grid) return;
+          
+          data.counters.forEach(counter => {
+            let card = grid.querySelector(`[data-service="${counter.service}"]`);
+            
+            if (!card) {
+              grid.innerHTML += createCounterCard(counter);
+              card = grid.querySelector(`[data-service="${counter.service}"]`);
+              if (card) card.classList.add('refresh-animation');
+            } else {
+              updateCounterCard(card, counter);
+            }
+          });
+          
+          currentCountersData = {};
+          data.counters.forEach(counter => {
+            currentCountersData[counter.service] = counter;
+          });
+          
+          lastUpdateTime = Date.now();
+          
+          // Ẩn error display nếu có
+          const errorDisplay = document.getElementById('errorDisplay');
+          if (errorDisplay) errorDisplay.style.display = 'none';
+          
+        } catch (error) {
+          console.error('❌ Lỗi khi tải dữ liệu quầy:', error);
+          
+          // Hiển thị error display
+          const errorDisplay = document.getElementById('errorDisplay');
+          if (errorDisplay) {
+            errorDisplay.style.display = 'block';
+            setTimeout(() => {
+              errorDisplay.style.display = 'none';
+            }, 3000);
+          }
+          
+          setTimeout(() => {
+            loadCountersStatus();
+          }, 3000);
+        }
+      }
+
+      // Khởi tạo
+      function init() {
+        try {
+          console.log('🚀 Khởi tạo màn hình hiển thị tất cả quầy');
+          
+          updateCurrentTime();
+          loadCountersStatus();
+          
+          setInterval(updateCurrentTime, 1000);
+          setInterval(loadCountersStatus, 3000);
+          setInterval(checkForNewCalls, 2000);
+          
+          console.log('✅ Khởi tạo hoàn tất');
+        } catch (error) {
+          console.error('❌ Lỗi khởi tạo:', error);
+        }
+      }
+
+      // Khởi tạo khi DOM load xong
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+      let isPageVisible = true;
+      let refreshInterval;
+
+      document.addEventListener('visibilitychange', () => {
+        try {
+          if (document.hidden) {
+            isPageVisible = false;
+            console.log('📱 Trang web bị ẩn - Giảm tần suất cập nhật');
+            clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadCountersStatus, 10000);
+          } else {
+            isPageVisible = true;
+            console.log('📱 Trang web được hiển thị - Khôi phục tần suất cập nhật');
+            clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadCountersStatus, 3000);
+            
+            setTimeout(loadCountersStatus, 500);
+          }
+        } catch (error) {
+          console.error('Lỗi visibility change:', error);
+        }
+      });
+      
+    })(); // End IIFE
+  </script>
+</body>
+</html>

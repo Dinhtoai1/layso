@@ -676,3 +676,21 @@ app.listen(PORT, HOST, () => {
   console.log('   DELETE /delete-account/:username - Xóa tài khoản');
   console.log('🔄 Tự động reset số thứ tự mỗi ngày 0h00');
 });
+
+// Debug endpoint để kiểm tra dữ liệu MongoDB
+app.get('/debug/mongodb', async (req, res) => {
+  try {
+    const counters = await Counter.find();
+    const ratings = await Rating.find().limit(10).sort({ timestamp: -1 });
+    
+    res.json({
+      message: 'Dữ liệu MongoDB hiện tại',
+      counters: counters,
+      ratingsCount: await Rating.countDocuments(),
+      latestRatings: ratings,
+      mongooseConnectionState: mongoose.connection.readyState // 1 = connected
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
