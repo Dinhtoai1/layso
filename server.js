@@ -64,14 +64,17 @@ const User = mongoose.model('User', userSchema);
 // API để lấy số mới
 app.post('/get-number', async (req, res) => {
   try {
-    let { service } = req.body;
+    let { serviceName, service } = req.body;
+    // Support both serviceName and service for compatibility
+    service = service || serviceName;
+    
     if (!service) {
       return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
     }
 
     // Fix encoding - normalize service name
     service = normalizeServiceName(service);
-    console.log(`🔍 Get-number: original="${req.body.service}", normalized="${service}"`);
+    console.log(`🔍 Get-number: original="${serviceName || req.body.service}", normalized="${service}"`);
 
     // Tìm counter cho service này
     let counter = await Counter.findOne({ service });
