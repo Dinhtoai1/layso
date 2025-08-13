@@ -78,10 +78,17 @@ app.post('/get-number', async (req, res) => {
 
     // Tăng số thứ tự
     counter.currentNumber += 1;
+    
+    // Tạo số theo format [MãQuầy][SốThứTự] - ví dụ: 1001, 2001, 3001
+    const counterNumber = getCounterNumber(service);
+    const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+    
     await counter.save();
 
     res.json({ 
-      number: counter.currentNumber,
+      number: formattedNumber,
+      rawNumber: counter.currentNumber, // Số thứ tự gốc
+      counterNumber: counterNumber, // Mã quầy
       service: service 
     });
   } catch (error) {
@@ -133,10 +140,15 @@ app.get('/stats', async (req, res) => {
     
     SERVICES.forEach(service => {
       const counter = counters.find(c => c.service === service);
+      const counterNumber = getCounterNumber(service);
+      const rawNumber = counter ? counter.currentNumber : 0;
+      const formattedNumber = rawNumber > 0 ? parseInt(counterNumber) * 1000 + rawNumber : 0;
+      
       serviceStats[service] = {
         waiting: 0, // Không có queue waiting, chỉ hiển thị số hiện tại
-        lastCalled: counter ? counter.currentNumber : 0,
-        currentNumber: counter ? counter.currentNumber : 0
+        lastCalled: formattedNumber, // Số đã format
+        currentNumber: formattedNumber, // Số đã format
+        rawNumber: rawNumber // Số thứ tự gốc
       };
     });
     
@@ -194,12 +206,25 @@ app.get('/current-numbers', async (req, res) => {
     
     // Khởi tạo tất cả dịch vụ với số 0
     SERVICES.forEach(service => {
-      currentNumbers[service] = 0;
+      const counterNumber = getCounterNumber(service);
+      currentNumbers[service] = {
+        formatted: 0, // Số hiển thị
+        raw: 0, // Số thứ tự gốc
+        counterNumber: counterNumber
+      };
     });
     
     // Cập nhật với số thực tế từ database
     counters.forEach(counter => {
-      currentNumbers[counter.service] = counter.currentNumber;
+      if (counter.currentNumber > 0) {
+        const counterNumber = getCounterNumber(counter.service);
+        const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+        currentNumbers[counter.service] = {
+          formatted: formattedNumber,
+          raw: counter.currentNumber,
+          counterNumber: counterNumber
+        };
+      }
     });
     
     res.json(currentNumbers);
@@ -237,12 +262,19 @@ app.post('/call-next', async (req, res) => {
 
     // Tăng số thứ tự
     counter.currentNumber += 1;
+    
+    // Tạo số theo format [MãQuầy][SốThứTự]
+    const counterNumber = getCounterNumber(service);
+    const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+    
     await counter.save();
 
     res.json({ 
-      number: counter.currentNumber,
+      number: formattedNumber,
+      rawNumber: counter.currentNumber,
+      counterNumber: counterNumber,
       service: service,
-      message: `Đã gọi số ${counter.currentNumber} cho dịch vụ ${service}`
+      message: `Đã gọi số ${formattedNumber} cho dịch vụ ${service}`
     });
   } catch (error) {
     console.error('Call next error:', error);
@@ -264,10 +296,16 @@ app.post('/recall-last', async (req, res) => {
       return res.status(404).json({ error: 'Chưa có số nào được gọi cho dịch vụ này' });
     }
 
+    // Tạo số theo format [MãQuầy][SốThứTự]
+    const counterNumber = getCounterNumber(service);
+    const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+
     res.json({ 
-      number: counter.currentNumber,
+      number: formattedNumber,
+      rawNumber: counter.currentNumber,
+      counterNumber: counterNumber,
       service: service,
-      message: `Đã gọi lại số ${counter.currentNumber} cho dịch vụ ${service}`
+      message: `Đã gọi lại số ${formattedNumber} cho dịch vụ ${service}`
     });
   } catch (error) {
     console.error('Recall last error:', error);
@@ -474,10 +512,14 @@ app.get('/latest-calls', async (req, res) => {
     
     counters.forEach(counter => {
       if (counter.currentNumber > 0) {
+        const counterNumber = getCounterNumber(counter.service);
+        const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+        
         latestCalls[counter.service] = {
-          number: counter.currentNumber,
+          number: formattedNumber,
+          rawNumber: counter.currentNumber,
           time: new Date().toISOString(),
-          counter: serviceToCounter[counter.service] || "1"
+          counter: counterNumber
         };
       }
     });
@@ -495,12 +537,17 @@ app.get('/all-counters-status', async (req, res) => {
     const result = {
       counters: SERVICES.map(service => {
         const counter = counters.find(c => c.service === service);
+        const counterNumber = getCounterNumber(service);
+        const rawNumber = counter ? counter.currentNumber : 0;
+        const formattedNumber = rawNumber > 0 ? parseInt(counterNumber) * 1000 + rawNumber : 0;
+        
         return {
           service,
-          currentNumber: counter ? counter.currentNumber : 0,
+          currentNumber: formattedNumber, // Số hiển thị đã format
+          rawNumber: rawNumber, // Số thứ tự gốc
           waiting: 0, // No queue system, just current number
-          lastCalled: counter ? counter.currentNumber : 0,
-          counterNumber: getCounterNumber(service),
+          lastCalled: formattedNumber,
+          counterNumber: counterNumber,
           status: 'active'
         };
       })
