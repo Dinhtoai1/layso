@@ -387,7 +387,11 @@
     async function loadStatistics() {
       console.log('📊 Đang tải thống kê...');
       try {
-  const response = await fetch('https://layso.onrender.com/ratings-report');
+        // Auto-detect API URL based on current host
+        const apiBaseUrl = window.location.hostname === 'localhost' ? 
+          'http://localhost:3000' : 'https://layso.onrender.com';
+        
+        const response = await fetch(`${apiBaseUrl}/ratings-report`);
         console.log('📡 Response status:', response.status);
         
         if (!response.ok) {

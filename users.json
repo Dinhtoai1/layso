@@ -1,7 +1,7 @@
 [
   { "username": "admin", "password": "admin@123", "service": "admin", "role": "admin" },
-  { "username": "tuphap", "password": "trile@123", "service": "Chứng thực - Hộ tịch" },
-  { "username": "vanthu", "password": "trile@123", "service": "Văn thư" },
-  { "username": "vanhoa", "password": "trile@123", "service": "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội" },
-  { "username": "kinhte", "password": "trile@123", "service": "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương" }
+  { "username": "tuphap", "password": "trile@123", "service": "Chứng thực - Hộ tịch", "role": "staff" },
+  { "username": "vanthu", "password": "trile@123", "service": "Văn thư", "role": "staff" },
+  { "username": "vanhoa", "password": "trile@123", "service": "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội", "role": "staff" },
+  { "username": "kinhte", "password": "trile@123", "service": "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương", "role": "staff" }
 ]

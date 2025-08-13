@@ -15,6 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Các biến cấu hình
 const SERVICES = [
+  "Chứng thực - Hộ tịch",
+  "Văn thư", 
+  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội",
+  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương",
   "Đăng ký kinh doanh",
   "Đăng ký đầu tư", 
   "Quy hoạch - Xây dựng",
@@ -32,6 +36,18 @@ const SERVICES = [
 
 // File paths
 const usersFile = path.join(__dirname, 'users.json');
+
+// Helper function để map service với số quầy
+const serviceToCounter = {
+  "Chứng thực - Hộ tịch": "1",
+  "Văn thư": "2", 
+  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
+  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "4"
+};
+
+function getCounterNumber(service) {
+  return serviceToCounter[service] || "1";
+}
 
 // Serve static files
 app.use(express.static('public'));
@@ -82,17 +98,22 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Thiếu tài khoản hoặc mật khẩu' });
     }
 
-    const user = await User.findOne({ username, password });
+    // Đọc users từ file JSON thay vì MongoDB
+    const users = readUsers();
+    const user = users.find(u => u.username === username && u.password === password);
+    
     if (!user) {
+      console.log(`❌ Đăng nhập thất bại: ${username}`);
       return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu' });
     }
 
+    console.log(`✅ Đăng nhập thành công: ${username}`);
     res.json({ 
       success: true, 
       user: { 
         username: user.username, 
         service: user.service, 
-        role: user.role 
+        role: user.role || 'staff' // Default role là staff nếu không có
       } 
     });
   } catch (error) {
@@ -309,11 +330,15 @@ app.get('/ratings-report', async (req, res) => {
     const result = {
       systemStats: {
         totalRatings,
+        totalOverallAverage: totalRatings > 0 ? (totalOverall / totalRatings).toFixed(1) : 0,
         averageOverall: totalRatings > 0 ? (totalOverall / totalRatings).toFixed(1) : 0,
         averageService: totalRatings > 0 ? (totalService / totalRatings).toFixed(1) : 0,
         averageTime: totalRatings > 0 ? (totalTime / totalRatings).toFixed(1) : 0,
-        averageAttitude: totalRatings > 0 ? (totalAttitude / totalRatings).toFixed(1) : 0
+        averageAttitude: totalRatings > 0 ? (totalAttitude / totalRatings).toFixed(1) : 0,
+        todayRatings: 0, // TODO: Calculate today's ratings
+        thisWeekRatings: 0 // TODO: Calculate this week's ratings
       },
+      ratings: ratings, // Frontend expect this for star distribution
       serviceStats: serviceBreakdown,
       starDistribution: ratingDistribution,
       recentRatings: ratings.slice(0, 10).map(r => ({
@@ -441,6 +466,56 @@ app.post('/change-password', async (req, res) => {
   }
 });
 
+// API cho all-counters-display.html
+app.get('/latest-calls', async (req, res) => {
+  try {
+    const counters = await Counter.find();
+    const latestCalls = {};
+    
+    counters.forEach(counter => {
+      if (counter.currentNumber > 0) {
+        latestCalls[counter.service] = {
+          number: counter.currentNumber,
+          time: new Date().toISOString(),
+          counter: serviceToCounter[counter.service] || "1"
+        };
+      }
+    });
+    
+    res.json(latestCalls);
+  } catch (error) {
+    console.error('Latest calls error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy lệnh gọi mới nhất' });
+  }
+});
+
+app.get('/all-counters-status', async (req, res) => {
+  try {
+    const counters = await Counter.find();
+    const result = {
+      counters: SERVICES.map(service => {
+        const counter = counters.find(c => c.service === service);
+        return {
+          service,
+          currentNumber: counter ? counter.currentNumber : 0,
+          waiting: 0, // No queue system, just current number
+          lastCalled: counter ? counter.currentNumber : 0,
+          counterNumber: getCounterNumber(service),
+          status: 'active'
+        };
+      })
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('All counters status error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy trạng thái quầy' });
+  }
+});
+
+// Helper function để map service với số quầy - đã define ở đầu file
+// const serviceToCounter = ...
+
 // Tự động reset số thứ tự mỗi ngày lúc 0h00
 cron.schedule('0 0 * * *', async () => {
   try {
@@ -544,6 +619,8 @@ app.listen(PORT, HOST, () => {
   console.log('   GET  /ratings-report - Báo cáo đánh giá nâng cao');
   console.log('   GET  /export-excel - Xuất Excel tổng quát');
   console.log('   GET  /export-ratings-excel - Xuất Excel đánh giá');
+  console.log('   GET  /latest-calls - Lệnh gọi mới nhất (Display)');
+  console.log('   GET  /all-counters-status - Trạng thái tất cả quầy');
   console.log('   POST /login - Đăng nhập');
   console.log('   GET  /stats - Thống kê tổng quan');
   console.log('   POST /change-password - Đổi mật khẩu');
