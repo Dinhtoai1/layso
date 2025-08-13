@@ -774,17 +774,21 @@
           const grid = document.getElementById('countersGrid');
           if (!grid) return;
           
-          data.counters.forEach(counter => {
-            let card = grid.querySelector(`[data-service="${counter.service}"]`);
-            
-            if (!card) {
-              grid.innerHTML += createCounterCard(counter);
-              card = grid.querySelector(`[data-service="${counter.service}"]`);
-              if (card) card.classList.add('refresh-animation');
-            } else {
-              updateCounterCard(card, counter);
-            }
-          });
+          // Kiểm tra nếu grid trống thì tạo các card ban đầu
+          if (grid.children.length === 0) {
+            data.counters.forEach(counter => {
+              const cardHTML = createCounterCard(counter);
+              grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+          } else {
+            // Cập nhật các card hiện có
+            data.counters.forEach(counter => {
+              const card = grid.querySelector(`[data-service="${counter.service}"]`);
+              if (card) {
+                updateCounterCard(card, counter);
+              }
+            });
+          }
           
           currentCountersData = {};
           data.counters.forEach(counter => {

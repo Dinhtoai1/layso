@@ -13,25 +13,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Các biến cấu hình
+// Các biến cấu hình - CHỈ 4 DỊCH VỤ CHO 4 QUẦY
 const SERVICES = [
-  "Chứng thực - Hộ tịch",
-  "Văn thư", 
-  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội",
-  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương",
-  "Đăng ký kinh doanh",
-  "Đăng ký đầu tư", 
-  "Quy hoạch - Xây dựng",
-  "Đất đai",
-  "Tài nguyên - Môi trường",
-  "Lao động - Thương binh xã hội",
-  "Y tế",
-  "Giáo dục",
-  "Nông nghiệp",
-  "Thuế",
-  "Hải quan",
-  "Tư pháp",
-  "Khác"
+  "Tiếp nhận hồ sơ",
+  "Trả kết quả", 
+  "Tư vấn, hướng dẫn",
+  "Dịch vụ công trực tuyến"
 ];
 
 // File paths
@@ -39,10 +26,10 @@ const usersFile = path.join(__dirname, 'users.json');
 
 // Helper function để map service với số quầy
 const serviceToCounter = {
-  "Chứng thực - Hộ tịch": "1",
-  "Văn thư": "2", 
-  "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
-  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "4"
+  "Tiếp nhận hồ sơ": "1",
+  "Trả kết quả": "2", 
+  "Tư vấn, hướng dẫn": "3",
+  "Dịch vụ công trực tuyến": "4"
 };
 
 function getCounterNumber(service) {
