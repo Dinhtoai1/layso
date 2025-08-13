@@ -404,8 +404,12 @@
     }
 
     function confirmRegister() {
+      // Tự động detect URL dựa trên hostname
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+      
       // Gửi API lấy số khi xác nhận
-      fetch('/get-number', {
+      fetch(`${apiBaseUrl}/get-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
