@@ -194,6 +194,30 @@ setTimeout(() => {
   migrateCounterSchema();
 }, 2000); // Chờ 2 giây sau khi MongoDB connect
 
+// API reset nhanh để fix sync issue
+app.post('/fix-counters', async (req, res) => {
+  try {
+    console.log('🔧 Fixing counter sync issues...');
+    
+    // Reset tất cả về 0 để bắt đầu lại
+    await Counter.updateMany({}, { 
+      currentNumber: 0,
+      calledNumber: 0,
+      lastUpdated: new Date()
+    });
+    
+    console.log('✅ All counters reset to 0');
+    
+    res.json({ 
+      success: true, 
+      message: 'Đã reset tất cả counters - Khách hàng có thể lấy số mới từ đầu'
+    });
+  } catch (error) {
+    console.error('Fix counters error:', error);
+    res.status(500).json({ error: 'Lỗi khi fix counters' });
+  }
+});
+
 // Debug endpoint để xem counters data
 app.get('/debug-counters', async (req, res) => {
   try {
@@ -333,8 +357,11 @@ app.post('/call-next', async (req, res) => {
       return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
 
+    console.log(`🔍 Call-next debug: service=${service}, currentNumber=${counter.currentNumber}, calledNumber=${counter.calledNumber}`);
+
     // Kiểm tra xem còn số nào để gọi không
     if (counter.calledNumber >= counter.currentNumber) {
+      console.log(`❌ No more customers: calledNumber(${counter.calledNumber}) >= currentNumber(${counter.currentNumber})`);
       return res.status(404).json({ error: 'Không có khách nào đang chờ' });
     }
 
@@ -342,6 +369,8 @@ app.post('/call-next', async (req, res) => {
     counter.calledNumber += 1;
     counter.lastUpdated = new Date();
     await counter.save();
+
+    console.log(`✅ Called number ${counter.calledNumber} for service ${service}`);
 
     // Tạo số hiển thị
     const counterNumber = getCounterNumber(service);
