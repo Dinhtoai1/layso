@@ -312,8 +312,8 @@
         // Lấy số quầy tương ứng
         const counterNumber = serviceToCounter[service] || "1";
         
-        // Phát âm thanh khi gọi số mới
-        announceNumber(data.number, counterNumber);
+        // Không phát âm thanh ở màn hình staff
+        // announceNumber(data.number, counterNumber);
         
         const waitingText = data.waitingCount !== undefined && data.waitingCount > 0 ? 
           ` (Còn ${data.waitingCount} khách chờ)` : ' (Không còn khách chờ)';
@@ -347,42 +347,47 @@
     }
 
     function recallLast() {
-  fetch('https://layso.onrender.com/recall-last', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Không thể gọi lại');
-        return res.json();
-      })
-      .then((data) => {
-        // Lấy số quầy tương ứng
-        const counterNumber = serviceToCounter[service] || "1";
-        
-        // Phát âm thanh khi gọi lại
-        announceNumber(data.number, counterNumber);
-        
-        const message = `Đã gọi lại số ${data.number} cho lĩnh vực "${service}".`;
-        document.getElementById('next-result').innerText = message;
-        
-        // Gửi thông báo đến popup hiển thị (nếu đang mở)
-        if (window.displayWindow && !window.displayWindow.closed) {
-          window.displayWindow.postMessage({
-            type: 'NEW_CALL',
-            number: data.number,
-            service: service
-          }, '*');
-        }
-        
-        loadStats();
-      })
-      .catch((error) => {
-        console.error('Error in recallLast:', error);
-        document.getElementById('next-result').innerText = 
-          `Không thể gọi lại số ở lĩnh vực "${service}".`;
-        loadStats();
-      });
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+      console.log('🔄 Thực hiện recall-last cho service:', service, 'API:', apiBaseUrl);
+      fetch(`${apiBaseUrl}/recall-last`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service, serviceName: service })
+        })
+        .then(res => {
+          console.log('Recall response status:', res.status);
+          if (!res.ok) throw new Error('Không thể gọi lại');
+          return res.json();
+        })
+        .then((data) => {
+          console.log('Recall success data:', data);
+          const counterNumber = serviceToCounter[service] || "1";
+          const message = `🔁 Đã gọi lại số ${data.number} cho lĩnh vực "${service}".`;
+          document.getElementById('next-result').innerText = message;
+          if (window.displayWindow && !window.displayWindow.closed) {
+            window.displayWindow.postMessage({
+              type: 'NEW_CALL',
+              number: data.number,
+              service: service,
+              isRecall: true
+            }, '*');
+          }
+          loadStats();
+        })
+        .catch((error) => {
+          console.error('Error in recallLast:', error);
+          document.getElementById('next-result').innerText = 
+            `Không thể gọi lại số ở lĩnh vực "${service}". (${error.message})`;
+          loadStats();
+        });
+    }
+
+    // Định nghĩa hàm announceNumber noop để tránh lỗi nếu code cũ vẫn gọi
+    if (typeof announceNumber === 'undefined') {
+      function announceNumber() {
+        // no-op on staff screen
+      }
     }
 
     function openRatingPage() {
