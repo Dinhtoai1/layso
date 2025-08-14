@@ -393,6 +393,15 @@
   const PRINT_MODE = 'hidden-window';
   // Kích thước giấy: 58 hoặc 80 (mm)
   const PAPER_WIDTH_MM = 80;
+  // Lề trái/phải vé (mm) để canh giữa đúng khổ máy in (đôi khi máy in thêm viền trắng)
+  const TICKET_HORIZONTAL_PADDING_MM = 0; // chỉnh 1-2 nếu thấy bị lệch phải/trái
+  // Tùy chỉnh kích thước chữ theo khổ
+  const FONT_SIZE_NUMBER = PAPER_WIDTH_MM <= 60 ? 44 : 50;
+  const FONT_SIZE_SERVICE = PAPER_WIDTH_MM <= 60 ? 13 : 15;
+  const FONT_SIZE_HEADER = PAPER_WIDTH_MM <= 60 ? 12 : 13;
+  const FONT_SIZE_FOOTER = PAPER_WIDTH_MM <= 60 ? 11 : 11;
+  // Hiển thị ngày giờ
+  const SHOW_DATETIME = true;
   // Tự đóng hộp thoại in nếu chạy Chrome kiosk (--kiosk-printing)
   // ================== /CẤU HÌNH IN ==================
 
@@ -451,16 +460,17 @@
 
     // ================== HÀM IN TỰ ĐỘNG ==================
     function buildTicketHTML(number, service) {
+      const dateTimeLine = SHOW_DATETIME ? `<div style='font-size:${FONT_SIZE_HEADER - 1}px;'>${new Date().toLocaleString('vi-VN')}</div>` : '';
       return `
-        <div style="font-family:Arial, sans-serif; width:${PAPER_WIDTH_MM}mm; padding:4mm 0; text-align:center;">
-          <div style='font-size:13px;font-weight:bold;'>TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
-          <div style='font-size:12px;'>XÃ TRI LỄ - LẠNG SƠN</div>
-          <div style='border-top:1px dashed #000;margin:6px 10%'></div>
-          <div style='font-size:50px;font-weight:700;'>${number}</div>
-          <div style='font-size:15px;word-break:break-word;padding:0 4mm;'>${service}</div>
-          <div style='border-top:1px dashed #000;margin:6px 10%'></div>
-          <div style='font-size:12px;'>${new Date().toLocaleString('vi-VN')}</div>
-          <div style='margin-top:4px;font-size:11px;'>Vui lòng chờ đến khi được gọi</div>
+        <div style="font-family:Arial, sans-serif; width:${PAPER_WIDTH_MM}mm; padding:2mm ${TICKET_HORIZONTAL_PADDING_MM}mm; text-align:center; box-sizing:border-box;">
+          <div style='font-size:${FONT_SIZE_HEADER}px;font-weight:bold;line-height:1.15;'>TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
+          <div style='font-size:${FONT_SIZE_HEADER - 1}px;line-height:1.15;'>XÃ TRI LỄ - LẠNG SƠN</div>
+          <div style='border-top:1px dashed #000;margin:5px 12%'></div>
+          <div style='font-size:${FONT_SIZE_NUMBER}px;font-weight:700;line-height:1.05;'>${number}</div>
+          <div style='font-size:${FONT_SIZE_SERVICE}px;word-break:break-word;line-height:1.2;padding:0 2mm;'>${service}</div>
+          <div style='border-top:1px dashed #000;margin:5px 12%'></div>
+          ${dateTimeLine}
+          <div style='margin-top:3px;font-size:${FONT_SIZE_FOOTER}px;'>Vui lòng chờ đến khi được gọi</div>
         </div>`;
     }
 
@@ -493,7 +503,13 @@
     function injectPrintStyles() {
       if (printCSSInjected) return;
       const style = document.createElement('style');
-      style.innerHTML = `@media print {\n  body * { visibility: hidden !important; }\n  #print-area, #print-area * { visibility: visible !important; }\n  #print-area { position: fixed; top:0; left:0; width:${PAPER_WIDTH_MM}mm; }\n}`;
+      style.innerHTML = `@page { size: ${PAPER_WIDTH_MM}mm auto; margin:0; }
+@media print {
+  html, body { padding:0 !important; margin:0 !important; }
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area { position: fixed; top:0; left:0; width:${PAPER_WIDTH_MM}mm; margin:0; padding:0; }
+}`;
       document.head.appendChild(style);
       printCSSInjected = true;
     }
