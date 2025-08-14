@@ -403,10 +403,12 @@
   const COMPACT_MODE = PAPER_WIDTH_MM <= 60;
   const MEDIUM_MODE = PAPER_WIDTH_MM > 60 && PAPER_WIDTH_MM <= 75;
   // Font theo chế độ
-  const FONT_SIZE_NUMBER = COMPACT_MODE ? 38 : (MEDIUM_MODE ? 46 : 50);
-  const FONT_SIZE_SERVICE = COMPACT_MODE ? 11 : (MEDIUM_MODE ? 12 : 15);
-  const FONT_SIZE_HEADER = COMPACT_MODE ? 11 : (MEDIUM_MODE ? 12 : 13);
-  const FONT_SIZE_FOOTER = COMPACT_MODE ? 10 : (MEDIUM_MODE ? 11 : 11);
+  // Tăng 20% kích thước chữ cho bản in
+  const FONT_SCALE = 1.2;
+  const FONT_SIZE_NUMBER = (COMPACT_MODE ? 38 : (MEDIUM_MODE ? 46 : 50)) * FONT_SCALE;
+  const FONT_SIZE_SERVICE = (COMPACT_MODE ? 11 : (MEDIUM_MODE ? 12 : 15)) * FONT_SCALE;
+  const FONT_SIZE_HEADER = (COMPACT_MODE ? 11 : (MEDIUM_MODE ? 12 : 13)) * FONT_SCALE;
+  const FONT_SIZE_FOOTER = (COMPACT_MODE ? 10 : (MEDIUM_MODE ? 11 : 11)) * FONT_SCALE;
   // Ẩn dòng phụ nếu cần để ngắn hơn (chỉ ẩn ở compact)
   const SHOW_SECOND_HEADER_LINE = !COMPACT_MODE;
   const SHOW_DATETIME = true;
