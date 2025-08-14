@@ -375,6 +375,9 @@
     <div id="result"></div>
   </div>
 
+  <!-- Khu vực in ẩn -->
+  <div id="print-area" class="print-area" style="display:none;"></div>
+
   <!-- Modal -->
   <div id="modal">
     <div id="modal-content">
@@ -385,6 +388,14 @@
   </div>
 
   <script>
+  // ================== CẤU HÌNH IN ==================
+  // Chế độ in: 'hidden-window' (mặc định) hoặc 'popup'
+  const PRINT_MODE = 'hidden-window';
+  // Kích thước giấy: 58 hoặc 80 (mm)
+  const PAPER_WIDTH_MM = 80;
+  // Tự đóng hộp thoại in nếu chạy Chrome kiosk (--kiosk-printing)
+  // ================== /CẤU HÌNH IN ==================
+
     let lastService = '';
     let lastNumber = '';
 
@@ -429,84 +440,64 @@
           `Bạn đã đăng ký thành công số ${lastNumber} cho lĩnh vực "${lastService}".`;
         closeModal();
 
-        // In tự động chỉ thông tin số thứ tự qua máy in POS
-        const printWindow = window.open('', '', 'width=400,height=400');
-        printWindow.document.write(`
-          <html>
-          <head>
-            <title>In số thứ tự</title>
-            <style>
-              @media print {
-                @page { size: 80mm 80mm; margin: 0; }
-                body { width: 80mm; height: 80mm; margin: 0; }
-              }
-              body {
-                font-family: Arial, sans-serif;
-                text-align: center;
-                margin: 0;
-                width: 80mm;
-                height: 80mm;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                box-sizing: border-box;
-                padding: 0;
-              }
-              .number {
-                font-size: 48px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                margin-top: 10px;
-              }
-              .service {
-                font-size: 18px;
-                margin-bottom: 8px;
-                word-break: break-word;
-                max-width: 90%;
-              }
-              .thanks {
-                font-size: 15px;
-                margin-top: 18px;
-              }
-              .divider {
-                border-top: 1px dashed #000;
-                width: 90%;
-                margin: 10px 0;
-              }
-              .logo {
-                width: 40px;
-                height: 40px;
-                margin-bottom: 8px;
-              }
-              .time {
-                font-size: 13px;
-                margin-top: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header-text">
-              <div style="font-size:14px;font-weight:bold;">TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
-              <div style="font-size:13px;">XÃ TRI LỄ, TỈNH LẠNG SƠN</div>
-            </div>
-            <div class="divider"></div>
-            <div class="number">${lastNumber}</div>
-            <div class="service">${lastService}</div>
-            <div class="divider"></div>
-            <div class="time">${new Date().toLocaleString('vi-VN')}</div>
-          </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+        // Gọi in tự động
+        autoPrintTicket(lastNumber, lastService);
       })
       .catch(() => {
         document.getElementById('result').innerText = 'Có lỗi xảy ra!';
         closeModal();
       });
     }
+
+    // ================== HÀM IN TỰ ĐỘNG ==================
+    function buildTicketHTML(number, service) {
+      return `
+        <div style="font-family:Arial, sans-serif; width:${PAPER_WIDTH_MM}mm; padding:4mm 0; text-align:center;">
+          <div style='font-size:13px;font-weight:bold;'>TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
+          <div style='font-size:12px;'>XÃ TRI LỄ - LẠNG SƠN</div>
+          <div style='border-top:1px dashed #000;margin:6px 10%'></div>
+          <div style='font-size:50px;font-weight:700;'>${number}</div>
+          <div style='font-size:15px;word-break:break-word;padding:0 4mm;'>${service}</div>
+          <div style='border-top:1px dashed #000;margin:6px 10%'></div>
+          <div style='font-size:12px;'>${new Date().toLocaleString('vi-VN')}</div>
+          <div style='margin-top:4px;font-size:11px;'>Vui lòng chờ đến khi được gọi</div>
+        </div>`;
+    }
+
+    function autoPrintTicket(number, service) {
+      if (PRINT_MODE === 'popup') {
+        legacyPopupPrint(number, service);
+        return;
+      }
+      // Hidden area print (ít popup, phù hợp kiosk)
+      const printArea = document.getElementById('print-area');
+      printArea.innerHTML = buildTicketHTML(number, service);
+      printArea.style.display = 'block';
+      // Ẩn phần còn lại khi in bằng CSS động
+      injectPrintStyles();
+      requestAnimationFrame(() => {
+        window.print();
+        setTimeout(() => { printArea.style.display = 'none'; }, 500);
+      });
+    }
+
+    function legacyPopupPrint(number, service) {
+      const w = window.open('', '', 'width=400,height=400');
+      w.document.write(`<html><head><title>In</title><style>@page{size:${PAPER_WIDTH_MM}mm auto;margin:0;}body{margin:0;}</style></head><body>` + buildTicketHTML(number, service) + `</body></html>`);
+      w.document.close();
+      w.focus();
+      setTimeout(()=>{w.print(); w.close();}, 250);
+    }
+
+    let printCSSInjected = false;
+    function injectPrintStyles() {
+      if (printCSSInjected) return;
+      const style = document.createElement('style');
+      style.innerHTML = `@media print {\n  body * { visibility: hidden !important; }\n  #print-area, #print-area * { visibility: visible !important; }\n  #print-area { position: fixed; top:0; left:0; width:${PAPER_WIDTH_MM}mm; }\n}`;
+      document.head.appendChild(style);
+      printCSSInjected = true;
+    }
+    // ================== /HÀM IN TỰ ĐỘNG ==================
   </script>
 </body>
 </html>
