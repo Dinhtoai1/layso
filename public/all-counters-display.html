@@ -861,8 +861,10 @@
           loadCountersStatus();
           
           setInterval(updateCurrentTime, 1000);
-          setInterval(loadCountersStatus, 5000); // Tăng từ 3s lên 5s
-          setInterval(checkForNewCalls, 4000);   // Tăng từ 2s lên 4s để giảm polling
+          // Giảm chu kỳ để phát âm thanh nhanh hơn
+          setInterval(loadCountersStatus, 2000); // 2s cập nhật trạng thái quầy
+          setInterval(checkForNewCalls, 1500);   // 1.5s kiểm tra số mới gọi
+          setTimeout(checkForNewCalls, 300);     // chạy sớm sau khi load
           
           console.log('✅ Khởi tạo hoàn tất');
         } catch (error) {
@@ -886,12 +888,12 @@
             isPageVisible = false;
             console.log('📱 Trang web bị ẩn - Giảm tần suất cập nhật');
             clearInterval(refreshInterval);
-            refreshInterval = setInterval(loadCountersStatus, 10000);
+            refreshInterval = setInterval(loadCountersStatus, 5000); // giảm còn 5s
           } else {
             isPageVisible = true;
             console.log('📱 Trang web được hiển thị - Khôi phục tần suất cập nhật');
             clearInterval(refreshInterval);
-            refreshInterval = setInterval(loadCountersStatus, 3000);
+            refreshInterval = setInterval(loadCountersStatus, 2000); // giảm còn 2s
             
             setTimeout(loadCountersStatus, 500);
           }
