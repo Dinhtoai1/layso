@@ -32,6 +32,9 @@ const serviceToCounter = {
   "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "4"
 };
 
+// Bộ nhớ tạm lưu các lần gọi lại gần đây để ép phát âm thanh lại (service -> timestamp ms)
+const recentRecalls = new Map();
+
 function getCounterNumber(service) {
   return serviceToCounter[service] || "1";
 }
@@ -477,22 +480,34 @@ app.post('/recall-last', async (req, res) => {
       return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
     }
 
+    const normalizedService = normalizeServiceName(service);
     // Tìm counter cho service này
-    const counter = await Counter.findOne({ service });
-    if (!counter || counter.currentNumber === 0) {
+    const counter = await Counter.findOne({ service: normalizedService });
+    if (!counter || (counter.calledNumber || 0) === 0) {
       return res.status(404).json({ error: 'Chưa có số nào được gọi cho dịch vụ này' });
     }
 
-    // Tạo số theo format [MãQuầy][SốThứTự]
-    const counterNumber = getCounterNumber(service);
-    const formattedNumber = parseInt(counterNumber) * 1000 + counter.currentNumber;
+    // Sử dụng calledNumber (số đã gọi) để phát lại
+    const calledNumber = counter.calledNumber;
+    const counterNumber = getCounterNumber(normalizedService);
+    const formattedNumber = parseInt(counterNumber) * 1000 + calledNumber;
+
+    // Cập nhật lastUpdated để /latest-calls coi như mới gọi lại
+    counter.lastUpdated = new Date();
+    await counter.save();
+
+    // Ghi nhận recall vào bộ nhớ tạm để flag isRecall trong /latest-calls
+    if (typeof recentRecalls !== 'undefined') {
+      recentRecalls.set(normalizedService, Date.now());
+    }
 
     res.json({ 
       number: formattedNumber,
-      rawNumber: counter.currentNumber,
+      rawNumber: calledNumber,
       counterNumber: counterNumber,
-      service: service,
-      message: `Đã gọi lại số ${formattedNumber} cho dịch vụ ${service}`
+      service: normalizedService,
+      isRecall: true,
+      message: `Đã gọi lại số ${formattedNumber} cho dịch vụ ${normalizedService}`
     });
   } catch (error) {
     console.error('Recall last error:', error);
@@ -707,6 +722,16 @@ app.get('/latest-calls', async (req, res) => {
         if (timeDiff <= 10000) { // 10 giây
           const counterNumber = getCounterNumber(counter.service);
           const formattedNumber = parseInt(counterNumber) * 1000 + counter.calledNumber;
+          // Kiểm tra recall gần đây
+          let isRecall = false;
+          if (recentRecalls.has(counter.service)) {
+            const recallTs = recentRecalls.get(counter.service);
+            if (Date.now() - recallTs <= 8000) { // trong 8 giây coi là recall
+              isRecall = true;
+            } else {
+              recentRecalls.delete(counter.service); // hết hạn
+            }
+          }
           
           latestCalls[counter.service] = {
             number: formattedNumber,
@@ -714,7 +739,8 @@ app.get('/latest-calls', async (req, res) => {
             time: counter.lastUpdated,
             counter: counterNumber,
             waitingCount: counter.currentNumber - counter.calledNumber,
-            isRecent: true
+            isRecent: true,
+            isRecall
           };
         }
       }
@@ -732,28 +758,30 @@ app.get('/all-counters-status', async (req, res) => {
     const counters = await Counter.find();
     const result = {
       counters: SERVICES.map(service => {
-        const counter = counters.find(c => c.service === service);
-        const counterNumber = getCounterNumber(service);
-        const rawNumber = counter ? counter.currentNumber : 0;
-        const formattedNumber = rawNumber > 0 ? parseInt(counterNumber) * 1000 + rawNumber : 0;
-        
+        const normalizedService = normalizeServiceName(service);
+        const counter = counters.find(c => normalizeServiceName(c.service) === normalizedService);
+        const counterNumber = getCounterNumber(normalizedService);
+        const calledNumber = counter ? (counter.calledNumber || 0) : 0;
+        const currentNumber = counter ? (counter.currentNumber || 0) : 0;
+        const waitingCount = Math.max(0, currentNumber - calledNumber);
+        const formattedCalledNumber = calledNumber > 0 ? parseInt(counterNumber) * 1000 + calledNumber : 0;
         return {
-          service,
+          service: normalizedService,
           counterNumber: counterNumber,
-          currentCalling: formattedNumber > 0 ? {
-            number: formattedNumber,
-            time: new Date()
+          currentCalling: formattedCalledNumber > 0 ? {
+            number: formattedCalledNumber,
+            time: counter?.lastUpdated || new Date()
           } : null,
-          waitingCount: 0, // No queue system
-          currentNumber: formattedNumber, // Số hiển thị đã format
-          rawNumber: rawNumber, // Số thứ tự gốc
-          waiting: 0,
-          lastCalled: formattedNumber,
-          status: 'active'
+          waitingCount: waitingCount,
+            currentNumber: currentNumber,
+            calledNumber: calledNumber,
+            rawNumber: calledNumber,
+            waiting: waitingCount,
+            lastCalled: formattedCalledNumber,
+            status: 'active'
         };
       })
     };
-    
     res.json(result);
   } catch (error) {
     console.error('All counters status error:', error);
