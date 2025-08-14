@@ -791,18 +791,24 @@
       submitBtn.innerHTML = '⏳ Đang gửi...';
       submitBtn.disabled = true;
       
+      // Payload đúng cấu trúc backend yêu cầu: { service, ratings: {service,time,attitude,overall}, comment }
       const ratingData = {
         service: service,
-        serviceRating: ratings.service,
-        time: ratings.time,
-        attitude: ratings.attitude,
-        overall: ratings.overall,
+        ratings: {
+          service: ratings.service,
+          time: ratings.time,
+          attitude: ratings.attitude,
+          overall: ratings.overall
+        },
         comment: comment,
+        customerCode: '',
         timestamp: new Date().toISOString()
       };
 
       try {
-        const response = await fetch('/submit-rating', {
+        const apiBaseUrl = window.location.hostname === 'localhost' ? 
+          'http://localhost:3000' : 'https://layso.onrender.com';
+        const response = await fetch(`${apiBaseUrl}/submit-rating`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -823,11 +829,16 @@
             closePopup();
           }, 3000);
         } else {
-          throw new Error('Server error');
+          let errMsg = 'Server error';
+          try {
+            const errJson = await response.json();
+            if (errJson && errJson.error) errMsg = errJson.error;
+          } catch(_){}
+          throw new Error(errMsg);
         }
       } catch (error) {
         console.error('Error:', error);
-        showNotification('❌ Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.', 'error');
+        showNotification('❌ Có lỗi xảy ra khi gửi đánh giá: ' + (error.message || ''), 'error');
         
         // Restore button
         submitBtn.innerHTML = originalText;
