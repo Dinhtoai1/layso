@@ -391,6 +391,9 @@
   // ================== CẤU HÌNH IN ==================
   // Chế độ in: 'hidden-window' (mặc định) hoặc 'popup'
   const PRINT_MODE = 'hidden-window';
+  // Bật dùng QZ Tray (in trực tiếp không hộp thoại nếu QZ Tray client chạy và đã load qz-tray.js)
+  const USE_QZ_TRAY = true; // đổi thành false để tắt
+  const QZ_PREFERRED_PRINTER = null; // hoặc tên máy in cụ thể, ví dụ 'XP-80C'
   // Kích thước giấy: yêu cầu mới 72 x 65 mm
   const PAPER_WIDTH_MM = 72;
   const PAGE_HEIGHT_MM = 65; // chiều cao mong muốn
@@ -487,20 +490,23 @@
     }
 
     function autoPrintTicket(number, service) {
-      if (PRINT_MODE === 'popup') {
-        legacyPopupPrint(number, service);
+      if (USE_QZ_TRAY && window.qz && window.QZPrint) {
+        const html = buildTicketHTML(number, service);
+        QZPrint.printHTML(html, QZ_PREFERRED_PRINTER)
+          .then(()=> console.log('✅ In qua QZ Tray thành công'))
+          .catch(err => { console.warn('⚠️ QZ Tray lỗi, fallback browser print', err); fallbackBrowserPrint(number, service); });
         return;
       }
-      // Hidden area print (ít popup, phù hợp kiosk)
+      fallbackBrowserPrint(number, service);
+    }
+
+    function fallbackBrowserPrint(number, service){
+      if (PRINT_MODE === 'popup') { legacyPopupPrint(number, service); return; }
       const printArea = document.getElementById('print-area');
       printArea.innerHTML = buildTicketHTML(number, service);
       printArea.style.display = 'block';
-      // Ẩn phần còn lại khi in bằng CSS động
       injectPrintStyles();
-      requestAnimationFrame(() => {
-        window.print();
-        setTimeout(() => { printArea.style.display = 'none'; }, 500);
-      });
+      requestAnimationFrame(() => { window.print(); setTimeout(() => { printArea.style.display='none'; }, 500); });
     }
 
     function legacyPopupPrint(number, service) {
@@ -528,5 +534,8 @@
     }
     // ================== /HÀM IN TỰ ĐỘNG ==================
   </script>
+  <!-- QZ Tray scripts -->
+  <script src="js/qz-tray.js"></script>
+  <script src="js/qz-print.js"></script>
 </body>
 </html>
