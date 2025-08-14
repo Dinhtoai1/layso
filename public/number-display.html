@@ -240,8 +240,33 @@
       }
     }
 
+    // === ÂM THANH CẢNH BÁO TRƯỚC KHI PHÁT GIỌNG NÓI ===
+    let alertAudio = null;
+    function initAlertAudio(){
+      if(!alertAudio){
+        alertAudio = new Audio('sound/alert.mp3'); // đặt file vào public/sound/alert.mp3
+        alertAudio.preload = 'auto';
+        alertAudio.volume = 1.0;
+      }
+      return alertAudio;
+    }
+    function playAlertSound(){
+      return new Promise(resolve => {
+        const audio = initAlertAudio();
+        try {
+          audio.currentTime = 0;
+          const timeout = setTimeout(()=>resolve(),3000);
+          const done = ()=>{ clearTimeout(timeout); audio.onended=null; audio.onerror=null; resolve(); };
+            audio.onended = done;
+            audio.onerror = done;
+            const p = audio.play();
+            if(p && p.catch) p.catch(()=>done());
+        } catch { resolve(); }
+      });
+    }
+
     // Hàm thông báo bằng giọng nói tiếng Việt Microsoft Mai
-    function announceNumber(number, service) {
+  function announceNumber(number, service) {
       try {
         // Kiểm tra xem có thông báo nào đang phát không
         if (speechSynthesis.speaking) {
@@ -263,21 +288,34 @@
                 const message = `Xin kính mời quý khách có số thứ tự..... ${number}..... Đến quầy số..... ${service.counter}...... Để thực hiện thủ tục hành chính`;
         
         // Sử dụng Web Speech API với giọng Microsoft Mai
-        const utterance = new SpeechSynthesisUtterance(message);
+  const utterance = new SpeechSynthesisUtterance(message);
         
         // Đợi tải danh sách giọng nói và chọn Microsoft Mai
-        if (speechSynthesis.getVoices().length === 0) {
-          speechSynthesis.addEventListener('voiceschanged', () => {
-            setVietnameseVoiceForNumberDisplay(utterance, message);
-          }, { once: true });
-        } else {
+        const startSpeech = () => {
           setVietnameseVoiceForNumberDisplay(utterance, message);
-        }
+        };
+        if (speechSynthesis.getVoices().length === 0) {
+          speechSynthesis.addEventListener('voiceschanged', () => startSpeech(), { once: true });
+        } else { startSpeech(); }
+
+        // Phát cảnh báo trước khi đọc
+        playAlertSound().then(()=>{
+          // Nếu trong thời gian chờ có thông báo khác chen vào thì bỏ
+          if (speechSynthesis.speaking) return;
+          speechSynthesis.speak(utterance);
+          // Fallback nếu sau 2s không nói
+          setTimeout(()=>{
+            if(!speechSynthesis.speaking){
+              console.log('⚠️ Không phát được giọng nói sau cảnh báo, fallback knock');
+              playKnockSound();
+            }
+          },2000);
+        });
         
       } catch (error) {
         console.log('Không thể phát thông báo giọng nói:', error);
-        // Fallback về tiếng gõ cửa nếu không thể phát giọng nói
-        playKnockSound();
+  // Fallback về tiếng gõ cửa nếu không thể phát giọng nói
+  playKnockSound();
       }
     }
     

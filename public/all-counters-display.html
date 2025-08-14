@@ -411,6 +411,36 @@
         }
       }
 
+      // === ÂM THANH CẢNH BÁO TRƯỚC KHI PHÁT GIỌNG NÓI ===
+      let alertAudio = null;
+      function initAlertAudio() {
+        if (!alertAudio) {
+          // Đặt file vào public/sound/alert.mp3 (thư mục đã tạo). Nếu không tồn tại sẽ bỏ qua.
+          alertAudio = new Audio('sound/alert.mp3');
+          alertAudio.preload = 'auto';
+          alertAudio.volume = 1.0; // chỉnh nếu cần
+        }
+        return alertAudio;
+      }
+      // Trả về Promise hoàn thành khi âm thanh cảnh báo kết thúc hoặc lỗi/timeout
+      function playAlertSound() {
+        return new Promise(resolve => {
+            const audio = initAlertAudio();
+            if (!audio) return resolve();
+            try {
+              audio.currentTime = 0;
+              const timeout = setTimeout(() => { resolve(); }, 3000); // tránh treo nếu file hỏng
+              const done = () => { clearTimeout(timeout); audio.onended = null; audio.onerror = null; resolve(); };
+              audio.onended = done;
+              audio.onerror = done;
+              const playPromise = audio.play();
+              if (playPromise && typeof playPromise.then === 'function') {
+                playPromise.catch(() => done());
+              }
+            } catch { resolve(); }
+        });
+      }
+
       // Hàm thông báo bằng giọng nói tiếng Việt
       function announceNumber(number, counterNumber, isRecall = false) {
         try {
@@ -494,17 +524,20 @@
             }
           };
           
-          console.log('🎯 Đang phát âm thanh...');
-          speechSynthesis.speak(utterance);
-          
-          // Fallback nếu không phát được sau 2 giây
-          setTimeout(() => {
-            if (!speechSynthesis.speaking && isSpeaking) {
-              console.log('⚠️ Speech synthesis không hoạt động, chuyển sang tiếng gõ cửa');
-              isSpeaking = false;
-              playKnockSound();
-            }
-          }, 2000);
+          console.log('🔔 Phát âm thanh cảnh báo trước khi đọc...');
+          // Đặt isSpeaking = true trước khi phát cảnh báo (đã đặt ở trên) để khóa thêm queue mới
+          playAlertSound().then(() => {
+            console.log('🎯 Bắt đầu đọc sau cảnh báo');
+            speechSynthesis.speak(utterance);
+            // Fallback nếu sau 2 giây kể từ khi bắt đầu đọc vẫn không nói
+            setTimeout(() => {
+              if (!speechSynthesis.speaking && isSpeaking) {
+                console.log('⚠️ Speech synthesis không hoạt động (sau cảnh báo), fallback knock');
+                isSpeaking = false;
+                playKnockSound();
+              }
+            }, 2000);
+          });
           
         } catch (error) {
           console.log('❌ Không thể phát thông báo giọng nói:', error);
