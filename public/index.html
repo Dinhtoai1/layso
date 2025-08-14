@@ -475,7 +475,7 @@
         service = service.slice(0, MAX_SERVICE_CHARS - 1) + '…';
       }
       const dateTimeLine = SHOW_DATETIME ? `<div style='font-size:${FONT_SIZE_HEADER - 2}px;line-height:1.1;'>${new Date().toLocaleString('vi-VN')}</div>` : '';
-      const secondHeader = SHOW_SECOND_HEADER_LINE ? `<div style='font-size:${FONT_SIZE_HEADER - 1}px;line-height:1.1;'>XÃ TRI LỄ - LẠNG SƠN</div>` : '';
+  const secondHeader = SHOW_SECOND_HEADER_LINE ? `<div style='font-size:${FONT_SIZE_HEADER - 1}px;line-height:1.1;font-weight:bold;'>XÃ TRI LỄ, TỈNH LẠNG SƠN</div>` : '';
       return `
     <div style="font-family:Arial, sans-serif; width:${PAPER_WIDTH_MM}mm; padding:2mm ${TICKET_HORIZONTAL_PADDING_MM}mm; text-align:center; box-sizing:border-box;">
           <div style='font-size:${FONT_SIZE_HEADER}px;font-weight:bold;line-height:1.1;'>TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
