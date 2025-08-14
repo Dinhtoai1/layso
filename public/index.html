@@ -391,20 +391,21 @@
   // ================== CẤU HÌNH IN ==================
   // Chế độ in: 'hidden-window' (mặc định) hoặc 'popup'
   const PRINT_MODE = 'hidden-window';
-  // Kích thước giấy: chuyển sang khổ 58mm và cố định chiều cao ~60mm để tiết kiệm
-  const PAPER_WIDTH_MM = 58;
-  const PAGE_HEIGHT_MM = 60; // chiều cao mong muốn
+  // Kích thước giấy: yêu cầu mới 72 x 65 mm
+  const PAPER_WIDTH_MM = 72;
+  const PAGE_HEIGHT_MM = 65; // chiều cao mong muốn
   // Lề trái/phải vé (mm)
   const TICKET_HORIZONTAL_PADDING_MM = 0;
-  // Chế độ siêu gọn cho 58mm
+  // Chế độ hiển thị theo khổ
   const COMPACT_MODE = PAPER_WIDTH_MM <= 60;
+  const MEDIUM_MODE = PAPER_WIDTH_MM > 60 && PAPER_WIDTH_MM <= 75;
   // Font theo chế độ
-  const FONT_SIZE_NUMBER = COMPACT_MODE ? 38 : 50;
-  const FONT_SIZE_SERVICE = COMPACT_MODE ? 11 : 15;
-  const FONT_SIZE_HEADER = COMPACT_MODE ? 11 : 13;
-  const FONT_SIZE_FOOTER = COMPACT_MODE ? 10 : 11;
-  // Ẩn dòng phụ nếu cần để ngắn hơn
-  const SHOW_SECOND_HEADER_LINE = !COMPACT_MODE; // tắt ở 58mm cho gọn
+  const FONT_SIZE_NUMBER = COMPACT_MODE ? 38 : (MEDIUM_MODE ? 46 : 50);
+  const FONT_SIZE_SERVICE = COMPACT_MODE ? 11 : (MEDIUM_MODE ? 12 : 15);
+  const FONT_SIZE_HEADER = COMPACT_MODE ? 11 : (MEDIUM_MODE ? 12 : 13);
+  const FONT_SIZE_FOOTER = COMPACT_MODE ? 10 : (MEDIUM_MODE ? 11 : 11);
+  // Ẩn dòng phụ nếu cần để ngắn hơn (chỉ ẩn ở compact)
+  const SHOW_SECOND_HEADER_LINE = !COMPACT_MODE;
   const SHOW_DATETIME = true;
   // Giới hạn ký tự tên dịch vụ để tránh tràn chiều cao (cắt + …)
   const MAX_SERVICE_CHARS = COMPACT_MODE ? 42 : 90;
@@ -465,7 +466,7 @@
     }
 
     // ================== HÀM IN TỰ ĐỘNG ==================
-    function buildTicketHTML(number, serviceRaw) {
+  function buildTicketHTML(number, serviceRaw) {
       let service = serviceRaw.trim();
       if (service.length > MAX_SERVICE_CHARS) {
         service = service.slice(0, MAX_SERVICE_CHARS - 1) + '…';
@@ -473,7 +474,7 @@
       const dateTimeLine = SHOW_DATETIME ? `<div style='font-size:${FONT_SIZE_HEADER - 2}px;line-height:1.1;'>${new Date().toLocaleString('vi-VN')}</div>` : '';
       const secondHeader = SHOW_SECOND_HEADER_LINE ? `<div style='font-size:${FONT_SIZE_HEADER - 1}px;line-height:1.1;'>XÃ TRI LỄ - LẠNG SƠN</div>` : '';
       return `
-        <div style="font-family:Arial, sans-serif; width:${PAPER_WIDTH_MM}mm; padding:1.5mm ${TICKET_HORIZONTAL_PADDING_MM}mm; text-align:center; box-sizing:border-box;">
+    <div style="font-family:Arial, sans-serif; width:${PAPER_WIDTH_MM}mm; padding:2mm ${TICKET_HORIZONTAL_PADDING_MM}mm; text-align:center; box-sizing:border-box;">
           <div style='font-size:${FONT_SIZE_HEADER}px;font-weight:bold;line-height:1.1;'>TT PHỤC VỤ HÀNH CHÍNH CÔNG</div>
           ${secondHeader}
           <div style='border-top:1px dashed #000;margin:3px 14%'></div>
