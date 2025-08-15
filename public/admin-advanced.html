@@ -420,11 +420,16 @@
 
       const { systemStats } = ratingsData;
       console.log('📊 SystemStats:', systemStats);
-      
-      document.getElementById('totalRatings').textContent = systemStats.totalRatings || 0;
-      document.getElementById('avgRating').textContent = (systemStats.totalOverallAverage || 0).toFixed(1) + '/5';
-      document.getElementById('todayRatings').textContent = systemStats.todayRatings || 0;
-      document.getElementById('weekRatings').textContent = systemStats.thisWeekRatings || 0;
+  // Một số field backend đã .toFixed(1) nên là string => cần parseFloat trước khi .toFixed
+  const totalRatings = Number(systemStats.totalRatings) || 0;
+  const avgOverallNum = parseFloat(systemStats.totalOverallAverage) || 0;
+  const todayRatings = Number(systemStats.todayRatings) || 0;
+  const weekRatings = Number(systemStats.thisWeekRatings) || 0;
+
+  document.getElementById('totalRatings').textContent = totalRatings;
+  document.getElementById('avgRating').textContent = avgOverallNum.toFixed(1) + '/5';
+  document.getElementById('todayRatings').textContent = todayRatings;
+  document.getElementById('weekRatings').textContent = weekRatings;
     }
 
     // Display star distribution chart
