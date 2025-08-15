@@ -1017,6 +1017,49 @@ app.post('/reset-counters', async (req, res) => {
   }
 });
 
+// Wipe ALL counter + rating data (dangerous) and recreate empty counters
+app.post('/wipe-all-data', async (req, res) => {
+  try {
+    console.log('⚠️ YÊU CẦU XÓA TOÀN BỘ DỮ LIỆU: counters + ratings');
+    const { confirm } = req.body || {};
+    if (confirm !== 'YES') {
+      return res.status(400).json({ error: "Thiếu xác nhận. Gửi JSON { 'confirm': 'YES' } để thực hiện." });
+    }
+
+    const deletedRatings = await Rating.deleteMany({});
+    const deletedCounters = await Counter.deleteMany({});
+
+    // Tạo lại counters rỗng
+    const newCounters = SERVICES.map(service => ({
+      service,
+      currentNumber: 0,
+      calledNumber: 0,
+      lastUpdated: new Date()
+    }));
+    await Counter.insertMany(newCounters);
+
+    // Reset lastResetDay state
+    const today = new Date().toISOString().slice(0,10);
+    if (SystemState) {
+      await SystemState.updateOne({ key: 'lastResetDay' }, { $set: { value: today } }, { upsert: true });
+    }
+
+    console.log(`✅ ĐÃ XÓA ${deletedRatings.deletedCount} ratings & ${deletedCounters.deletedCount} counters. Tạo lại ${newCounters.length} counters.`);
+    res.json({
+      success: true,
+      message: 'Đã xóa toàn bộ dữ liệu và khởi tạo lại counters rỗng',
+      deleted: {
+        ratings: deletedRatings.deletedCount,
+        counters: deletedCounters.deletedCount
+      },
+      recreatedCounters: newCounters.map(c => c.service)
+    });
+  } catch (error) {
+    console.error('❌ wipe-all-data error:', error);
+    res.status(500).json({ error: 'Lỗi server khi xóa toàn bộ dữ liệu: ' + error.message });
+  }
+});
+
 // API để xem rating history theo thời gian (không bị reset)
 app.get('/ratings-history', async (req, res) => {
   try {
