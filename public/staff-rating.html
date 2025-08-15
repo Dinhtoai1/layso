@@ -632,7 +632,13 @@
     document.addEventListener('DOMContentLoaded', loadCustomerCodeFromUrl);
 
     /* ĐỔI MẬT KHẨU */
-    document.getElementById('changePasswordBox').style.display = 'block';
+    // Chỉ hiển thị box đổi mật khẩu nếu có query ?showChangePassword=1
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('showChangePassword') === '1') {
+        document.getElementById('changePasswordBox').style.display = 'block';
+      }
+    })();
 
     function changePassword() {
       const username = document.getElementById('cp-username').value.trim();
