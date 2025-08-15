@@ -476,12 +476,13 @@
     // Display service statistics
     function displayServiceStats() {
       console.log('🏢 Hiển thị thống kê dịch vụ');
-      if (!ratingsData || !ratingsData.serviceStats) {
-        console.log('⚠️ Không có dữ liệu serviceStats');
+      if (!ratingsData) {
+        console.log('⚠️ Không có ratingsData');
         return;
       }
 
-      const { serviceStats } = ratingsData;
+      // Backend trả về serviceStats (alias của serviceBreakdown) dạng { service: { count, avgRating, totalRating } }
+      const serviceStats = ratingsData.serviceStats || ratingsData.serviceBreakdown;
       const container = document.getElementById('serviceStats');
       
       console.log('🏢 ServiceStats:', serviceStats);
@@ -492,48 +493,67 @@
       }
 
       let html = '<h3>🏢 Thống kê theo dịch vụ</h3>';
+      const allRatings = ratingsData.ratings || [];
 
-      for (const [serviceName, stats] of Object.entries(serviceStats)) {
-        const starIcons = '⭐'.repeat(Math.round(stats.overallAverage));
-        
+      for (const [serviceName, statsRaw] of Object.entries(serviceStats)) {
+        const serviceRatings = allRatings.filter(r => r.service === serviceName);
+        const totalCount = statsRaw.count || serviceRatings.length;
+
+        // Tính phân bố sao (làm tròn overall về số nguyên 1-5)
+        const distribution = { star1:0, star2:0, star3:0, star4:0, star5:0 };
+        serviceRatings.forEach(r => {
+          const star = Math.round(r.overall || 0);
+            if (star >=1 && star <=5) distribution['star'+star]++;
+        });
+
+        // Điểm trung bình
+        let overallAverage = statsRaw.avgRating ? parseFloat(statsRaw.avgRating) : 0;
+        if (!overallAverage && serviceRatings.length > 0) {
+          overallAverage = serviceRatings.reduce((s,r)=> s + (r.overall||0),0) / serviceRatings.length;
+        }
+
+        // Số đánh giá có comment
+        const hasComments = serviceRatings.filter(r => (r.comment||'').trim().length > 0).length;
+
+        const starIcons = '⭐'.repeat(Math.round(overallAverage));
+
         html += `
           <div class="service-item">
             <div class="service-header">
               <div class="service-name">${serviceName}</div>
-              <div class="service-score">${stats.overallAverage.toFixed(1)}/5 ${starIcons}</div>
+              <div class="service-score">${overallAverage.toFixed(1)}/5 ${starIcons}</div>
             </div>
             <div class="service-details">
               <div class="service-detail">
-                <div class="detail-number">${stats.totalCount}</div>
+                <div class="detail-number">${totalCount}</div>
                 <div class="detail-label">Tổng đánh giá</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${stats.distribution.star5}</div>
+                <div class="detail-number">${distribution.star5}</div>
                 <div class="detail-label">5 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${stats.distribution.star4}</div>
+                <div class="detail-number">${distribution.star4}</div>
                 <div class="detail-label">4 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${stats.distribution.star3}</div>
+                <div class="detail-number">${distribution.star3}</div>
                 <div class="detail-label">3 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${stats.distribution.star2}</div>
+                <div class="detail-number">${distribution.star2}</div>
                 <div class="detail-label">2 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${stats.distribution.star1}</div>
+                <div class="detail-number">${distribution.star1}</div>
                 <div class="detail-label">1 sao</div>
               </div>
               <div class="service-detail">
-                <div class="detail-number">${stats.hasComments}</div>
+                <div class="detail-number">${hasComments}</div>
                 <div class="detail-label">Có nhận xét</div>
               </div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
       container.innerHTML = html;
