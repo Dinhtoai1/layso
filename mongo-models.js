@@ -34,4 +34,12 @@ const ratingSchema = new mongoose.Schema({
 
 const Rating = mongoose.model('Rating', ratingSchema);
 
-module.exports = { Counter, Rating, mongoose };
+// System state (key/value) Schema - dùng cho lưu ngày reset cuối cùng
+const systemStateSchema = new mongoose.Schema({
+  key: { type: String, required: true, unique: true },
+  value: { type: mongoose.Schema.Types.Mixed }
+}, { versionKey: false });
+
+const SystemState = mongoose.model('SystemState', systemStateSchema);
+
+module.exports = { Counter, Rating, SystemState, mongoose };

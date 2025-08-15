@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const ExcelJS = require('exceljs');
-const { Counter, Rating, mongoose } = require('./mongo-models');
+const { Counter, Rating, SystemState, mongoose } = require('./mongo-models');
 const cron = require('node-cron');
 
 const PORT = process.env.PORT || 3000;
@@ -64,9 +64,38 @@ const userSchema = new mongoose.Schema({
 }, { versionKey: false });
 const User = mongoose.model('User', userSchema);
 
+// ================== Fallback daily reset ==================
+async function ensureDailyReset() {
+  try {
+    const today = new Date();
+    const dayKey = today.toISOString().slice(0,10); // YYYY-MM-DD
+    let state = await SystemState.findOne({ key: 'lastResetDay' });
+    if (!state) {
+      state = new SystemState({ key: 'lastResetDay', value: dayKey });
+      await state.save();
+      return; // first run, do not reset existing numbers
+    }
+    if (state.value !== dayKey) {
+      console.log(`🕛 Thực hiện reset số do phát hiện sang ngày mới (cron fallback). Last=${state.value}, Now=${dayKey}`);
+      await Counter.updateMany({}, { currentNumber: 0, calledNumber: 0, lastUpdated: new Date() });
+      state.value = dayKey;
+      await state.save();
+      console.log('✅ Fallback daily reset thành công.');
+    }
+  } catch (err) {
+    console.error('❌ ensureDailyReset error:', err.message);
+  }
+}
+
+// Gọi lúc khởi động (sau 5s để chắc DB đã lên)
+setTimeout(()=> ensureDailyReset(), 5000);
+// ================== /Fallback daily reset ==================
+
 // API để lấy số mới
 app.post('/get-number', async (req, res) => {
   try {
+    // Đảm bảo reset hàng ngày nếu cron bị miss (gọi nhẹ, có cache ngày)
+    ensureDailyReset();
     let { serviceName, service } = req.body;
     // Support both serviceName and service for compatibility
     service = service || serviceName;
@@ -309,28 +338,57 @@ app.get('/debug-counters', async (req, res) => {
 // API để lưu rating
 app.post('/submit-rating', async (req, res) => {
   try {
-    const { service, ratings, comment, customerCode } = req.body;
-    
-    if (!service || !ratings) {
-      return res.status(400).json({ error: 'Thiếu thông tin đánh giá' });
+    // Giữ log chi tiết để debug trường hợp frontend cũ
+    console.log('📝 Incoming rating payload:', JSON.stringify(req.body));
+
+    let { service, ratings, comment, customerCode } = req.body;
+
+    // Chấp nhận cả cấu trúc cũ (phẳng) lẫn mới (ratings: { ... })
+    // Cấu trúc cũ: { service, serviceRating, time, attitude, overall, comment }
+    if (!ratings) {
+      const { serviceRating, time, attitude, overall } = req.body;
+      if (serviceRating || time || attitude || overall) {
+        ratings = {
+          service: serviceRating || 0,
+          time: time || 0,
+          attitude: attitude || 0,
+          overall: overall || 0
+        };
+        console.log('🔄 Converted legacy flat rating payload to nested ratings object');
+      }
     }
 
-    const rating = new Rating({
+    // Nếu vẫn chưa có ratings hợp lệ -> lỗi
+    if (!service || !ratings) {
+      return res.status(400).json({ error: 'Thiếu thông tin đánh giá (service hoặc ratings)' });
+    }
+
+    // Chuẩn hóa tên dịch vụ để thống nhất thống kê
+    service = normalizeServiceName(service);
+
+    // Ép kiểu & đảm bảo nằm trong khoảng 1-5
+    function norm(v) {
+      const n = parseInt(v); 
+      if (isNaN(n)) return 0;
+      return Math.min(5, Math.max(0, n));
+    }
+
+    const ratingDoc = new Rating({
       service,
-      serviceRating: ratings.service || 0,
-      time: ratings.time || 0,
-      attitude: ratings.attitude || 0,
-      overall: ratings.overall || 0,
-      comment: comment || '',
-      customerCode: customerCode || '',
+      serviceRating: norm(ratings.service),
+      time: norm(ratings.time),
+      attitude: norm(ratings.attitude),
+      overall: norm(ratings.overall),
+      comment: (comment || '').toString().slice(0, 2000),
+      customerCode: (customerCode || '').toString().slice(0, 100),
       timestamp: new Date()
     });
 
-    await rating.save();
-    res.json({ success: true, message: 'Đánh giá đã được lưu' });
+    await ratingDoc.save();
+    res.json({ success: true, message: 'Đánh giá đã được lưu', data: { id: ratingDoc._id } });
   } catch (error) {
-    console.error('Submit rating error:', error);
-    res.status(500).json({ error: 'Lỗi server khi lưu đánh giá' });
+    console.error('❌ Submit rating error:', error);
+    res.status(500).json({ error: 'Lỗi server khi lưu đánh giá: ' + error.message });
   }
 });
 
@@ -370,6 +428,7 @@ app.get('/services', (req, res) => {
 // API để lấy số hiện tại của từng dịch vụ
 app.get('/current-numbers', async (req, res) => {
   try {
+  ensureDailyReset();
     const counters = await Counter.find();
     const currentNumbers = {};
     
@@ -418,6 +477,7 @@ app.post('/reset-numbers', async (req, res) => {
 // API gọi số tiếp theo (cho staff)
 app.post('/call-next', async (req, res) => {
   try {
+  ensureDailyReset();
     const { service } = req.body;
     if (!service) {
       return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
@@ -475,6 +535,7 @@ app.post('/call-next', async (req, res) => {
 // API gọi lại số cuối (cho staff)
 app.post('/recall-last', async (req, res) => {
   try {
+  ensureDailyReset();
     const { service } = req.body;
     if (!service) {
       return res.status(400).json({ error: 'Thiếu thông tin dịch vụ' });
