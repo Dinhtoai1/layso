@@ -159,8 +159,9 @@
   }
   .counter-header {
     display: flex;
-    justify-content: center;
-    align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
     margin-bottom: 1.5vh;
     padding-bottom: 1vh;
     border-bottom: 2px solid rgba(255,255,255,0.3);
@@ -182,7 +183,15 @@
     letter-spacing: 0.5px;
   }
   .service-name {
-    display: none;
+    margin-top: 0.8vh;
+    font-size: 2vh;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    line-height: 1.2;
+    padding: 0 1vh;
+    word-break: break-word;
   }
   .current-calling {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
@@ -587,7 +596,8 @@
         "Chứng thực Hộ tịch": "1",
         "Văn thư": "2", 
         "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
-        "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "4"
+  // Tên thống nhất theo server
+  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "4"
       };
 
       // Biến theo dõi lệnh gọi gần nhất để phát âm thanh
@@ -598,10 +608,8 @@
 
       // Hàm kiểm tra và phát âm thanh cho lệnh gọi mới
       function checkForNewCalls() {
-        const apiBaseUrl = window.location.hostname === 'localhost' ? 
-          'http://localhost:3000' : 'https://layso.onrender.com';
-          
-        fetch(`${apiBaseUrl}/latest-calls`)
+  const apiBaseUrl = getApiBaseUrl();
+  fetch(`${apiBaseUrl}/latest-calls`)
           .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.json();
@@ -618,7 +626,10 @@
                 if (!announcedNumbers.has(callId)) {
                   console.log(`🆕 Phát hiện lệnh gọi mới cho ${service}!`);
                   
-                  const counterNumber = serviceToCounter[service];
+                  // Ưu tiên dùng counterNumber server trả về để tránh lệch map tên dịch vụ
+                  const counterNumber = (latestCall.counter != null && latestCall.counter !== '')
+                    ? String(latestCall.counter)
+                    : serviceToCounter[service];
                   if (counterNumber) {
                     console.log(`🔔 Phát thông báo cho lệnh gọi mới: ${latestCall.number} - Quầy ${counterNumber}${latestCall.isRecall ? ' (Gọi lại)' : ''}`);
                     announceNumber(latestCall.number, counterNumber, latestCall.isRecall || false);
@@ -634,7 +645,7 @@
                       console.log(`🧹 Đã dọn dẹp 50 callId cũ, còn lại: ${announcedNumbers.size}`);
                     }
                   } else {
-                    console.log(`❌ Không tìm thấy counter number cho service: ${service}`);
+                    console.log(`❌ Không tìm thấy counter number cho service: ${service} (server cũng không cung cấp). Bỏ qua phát âm thanh.`);
                   }
                   
                   lastKnownCalls[service] = {
@@ -732,6 +743,7 @@
             <div class="${cardClass}" data-service="${counter.service}">
               <div class="counter-header">
                 <div class="counter-number">QUẦY ${counter.counterNumber}</div>
+                <div class="service-name">${counter.service}</div>
               </div>
               
               <div class="current-calling">
@@ -790,6 +802,12 @@
               }, 150);
             }
           }
+
+          // Cập nhật tên lĩnh vực nếu cần
+          const serviceNameEl = card.querySelector('.service-name');
+          if (serviceNameEl && serviceNameEl.textContent !== counter.service) {
+            serviceNameEl.textContent = counter.service;
+          }
           
           const waitingNumber = card.querySelector('.waiting-number');
           if (waitingNumber && waitingNumber.textContent !== counter.waitingCount.toString()) {
@@ -826,9 +844,7 @@
 
       async function loadCountersStatus() {
         try {
-          const apiBaseUrl = window.location.hostname === 'localhost' ? 
-            'http://localhost:3000' : 'https://layso.onrender.com';
-            
+          const apiBaseUrl = getApiBaseUrl();
           const response = await fetch(`${apiBaseUrl}/all-counters-status`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -889,6 +905,7 @@
       function init() {
         try {
           console.log('🚀 Khởi tạo màn hình hiển thị tất cả quầy');
+          console.log('🌐 API Base URL:', getApiBaseUrl());
           
           updateCurrentTime();
           loadCountersStatus();
@@ -935,6 +952,24 @@
         }
       });
       
+      // Helper: đọc query param và chọn API base URL
+      function getApiBaseUrl() {
+        try {
+          const params = new URLSearchParams(window.location.search || '');
+          const override = params.get('api');
+          if (override && /^https?:\/\//i.test(override)) {
+            return override.replace(/\/$/, '');
+          }
+          // Nếu chạy từ file://, fallback localhost:3000
+          if (location.protocol === 'file:') {
+            return 'http://localhost:3000';
+          }
+          return window.location.origin;
+        } catch {
+          return window.location.origin;
+        }
+      }
+
     })(); // End IIFE
   </script>
 </body>
