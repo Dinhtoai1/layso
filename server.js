@@ -18,7 +18,8 @@ const SERVICES = [
   "Chứng thực Hộ tịch",
   "Văn thư", 
   "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội",
-  "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương"
+  // Chuẩn hóa tên dịch vụ quầy 4 trùng với frontend
+  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương"
 ];
 
 // File paths
@@ -29,14 +30,15 @@ const serviceToCounter = {
   "Chứng thực Hộ tịch": "1",
   "Văn thư": "2", 
   "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
-  "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "4"
+  "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "4"
 };
 
 // Bộ nhớ tạm lưu các lần gọi lại gần đây để ép phát âm thanh lại (service -> timestamp ms)
 const recentRecalls = new Map();
 
 function getCounterNumber(service) {
-  return serviceToCounter[service] || "1";
+  const normalized = normalizeServiceName(service);
+  return serviceToCounter[normalized] || "1";
 }
 
 // Normalize service name để tránh encoding issues
@@ -46,6 +48,10 @@ function normalizeServiceName(serviceName) {
     "Ch?ng th?c H? t?ch": "Chứng thực Hộ tịch",
     "Chứng thực - Hộ tịch": "Chứng thực Hộ tịch",
     "V?n th?": "Văn thư",
+  // Các biến thể của Quầy 4
+  "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương",
+  "Nông nghiệp và Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương",
+  "Nông nghiệp Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương": "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương"
     // Thêm các mapping khác nếu cần
   };
   
@@ -108,8 +114,8 @@ app.post('/get-number', async (req, res) => {
     service = normalizeServiceName(service);
     console.log(`🔍 Get-number: original="${serviceName || req.body.service}", normalized="${service}"`);
 
-    // Tìm counter cho service này
-    let counter = await Counter.findOne({ service });
+  // Tìm counter cho service này (đã chuẩn hóa)
+  let counter = await Counter.findOne({ service });
     if (!counter) {
       // Tạo mới nếu chưa có
       counter = new Counter({ service, currentNumber: 0, calledNumber: 0 });
@@ -229,7 +235,7 @@ async function migrateCounterSchema() {
     // Tìm các counter không có lastUpdated field
     const countersToUpdate = await Counter.find({ lastUpdated: { $exists: false } });
     
-    if (countersToUpdate.length > 0) {
+  if (countersToUpdate.length > 0) {
       console.log(`📝 Migrating ${countersToUpdate.length} counter records...`);
       
       // Update existing records với lastUpdated
@@ -241,6 +247,27 @@ async function migrateCounterSchema() {
       console.log('✅ Counter schema migration completed');
     } else {
       console.log('✅ Counter schema is up to date');
+    }
+
+    // Hợp nhất các bản ghi trùng tên dịch vụ (đặc biệt quầy 4)
+    const variantsQ4 = [
+      "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương",
+      "Nông nghiệp và Môi trường - Tài chính kế hoạch - Xây dựng và Công thương",
+      "Nông nghiệp Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương",
+      "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương"
+    ];
+    const dupCounters = await Counter.find({ service: { $in: variantsQ4 } });
+    if (dupCounters.length > 1) {
+      console.log(`🔧 Gộp ${dupCounters.length} counter variants cho Quầy 4`);
+      // Chọn tên chuẩn
+      const canonical = "Nông nghiệp và Môi trường - Tài chính Kế hoạch - Xây dựng và Công thương";
+      // Gộp số
+      const sumCurrent = dupCounters.reduce((s,c)=> s + (c.currentNumber||0), 0);
+      const sumCalled = dupCounters.reduce((s,c)=> s + (c.calledNumber||0), 0);
+      // Xóa tất cả và tạo 1 record chuẩn
+      await Counter.deleteMany({ service: { $in: variantsQ4 } });
+      await new Counter({ service: canonical, currentNumber: sumCurrent, calledNumber: sumCalled, lastUpdated: new Date() }).save();
+      console.log('✅ Đã hợp nhất counters quầy 4 về tên chuẩn');
     }
   } catch (error) {
     console.error('❌ Counter migration error:', error);
