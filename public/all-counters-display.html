@@ -608,8 +608,8 @@
       // Biến theo dõi lệnh gọi gần nhất để phát âm thanh
       let lastKnownCalls = {};
       
-      // Biến theo dõi các số đã phát âm thanh để tránh lặp lại
-      let announcedNumbers = new Set();
+  // Biến theo dõi các số đã phát âm thanh để tránh lặp lại (service-number-time)
+  let announcedNumbers = new Set();
 
       // Hàm kiểm tra và phát âm thanh cho lệnh gọi mới
       function checkForNewCalls() {
@@ -840,6 +840,23 @@
               setTimeout(() => {
                 callingNumberElement.style.animation = '';
               }, 3000);
+            }
+
+            // Fallback phát âm thanh nếu API /latest-calls không hoạt động
+            try {
+              const callId = `${counter.service}-${counter.currentCalling.number}-${counter.currentCalling.time}`;
+              if (!announcedNumbers.has(callId)) {
+                console.log('🔈 Fallback announce (from status change):', callId);
+                announceNumber(counter.currentCalling.number, counter.counterNumber, false);
+                announcedNumbers.add(callId);
+                // Dọn cũ nếu vượt quá 100
+                if (announcedNumbers.size > 120) {
+                  const oldest = Array.from(announcedNumbers).slice(0, 20);
+                  oldest.forEach(id => announcedNumbers.delete(id));
+                }
+              }
+            } catch (e) {
+              console.log('⚠️ Fallback announce error:', e);
             }
           }
         } catch (error) {
