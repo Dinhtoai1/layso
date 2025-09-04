@@ -194,6 +194,38 @@
       transform: translateY(-1px) scale(1.01);
       transition: all 0.1s ease;
     }
+
+    /* Link button (anchor) styled like button */
+    .link-button {
+      display: block;
+      text-decoration: none;
+      text-align: center;
+      margin: 15px 0;
+      padding: 16px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #2e7d32, #1b5e20, #2e7d32);
+      color: white;
+      box-shadow:
+        0 6px 20px rgba(46, 125, 50, 0.3),
+        0 1px 3px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .link-button:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow:
+        0 10px 30px rgba(46, 125, 50, 0.4),
+        0 5px 15px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      background: linear-gradient(135deg, #388e3c, #2e7d32, #1b5e20);
+    }
+    .link-button:active {
+      transform: translateY(-1px) scale(1.01);
+    }
     
     /* Responsive Design - Tối ưu cho 16:9 */
     @media screen and (min-width: 1280px) and (max-width: 1920px) and (min-height: 720px) and (max-height: 1080px) {
@@ -366,14 +398,14 @@
   <div class="main-content">
     <div class="container">
       <h2>🏛️ Chọn đối tượng sử dụng</h2>
+      <a class="link-button" role="button" href="https://dichvucong.gov.vn/p/home/dvc-tra-cuu-ho-so.html" target="_blank" rel="noopener noreferrer">
+        � Tra cứu thông tin TTHC
+      </a>
       <button onclick="window.location='index.html'">
-        👥 Dành cho Công dân đến thực hiện Thủ tục hành chính
+        � Dành cho Công dân đến thực hiện Thủ tục hành chính
       </button>
       <button onclick="window.location='login.html'">
-        👨‍💼 Dành cho Công chức
-      </button>
-      <button onclick="window.open('https://dichvucong.gov.vn/p/home/dvc-tra-cuu-ho-so.html','_blank')">
-        🔎 Tra cứu thông tin TTHC
+        👨‍� Dành cho Công chức
       </button>
     </div>
   </div>
