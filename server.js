@@ -410,13 +410,47 @@ app.post('/submit-rating', async (req, res) => {
       customerCode: (customerCode || '').toString().slice(0, 100),
       timestamp: new Date()
     });
-    // Nếu customerCode đã có, chặn đánh giá trùng lặp (chỉ cho phép 1 lần/khách hàng)
-    if (ratingDoc.customerCode && ratingDoc.customerCode.length > 0) {
-      const existing = await Rating.findOne({ customerCode: ratingDoc.customerCode });
-      if (existing) {
-        console.log('⚠️ Duplicate rating attempt for customerCode=', ratingDoc.customerCode);
-        return res.status(409).json({ error: 'Khách hàng đã được đánh giá trước đó' });
+    // Kiểm tra customerCode hợp lệ và chỉ cho phép đánh giá khi đang gọi số đó
+    if (!ratingDoc.customerCode || ratingDoc.customerCode.length < 4) {
+      return res.status(400).json({ error: 'Thiếu hoặc sai customerCode' });
+    }
+
+    // Parse customerCode: dạng [counterNumber][rawNumber], ví dụ 1001 -> counterNumber=1, rawNumber=1
+    const codeStr = String(ratingDoc.customerCode);
+    const counterNumber = parseInt(codeStr.substring(0, 1));
+    const rawNumber = parseInt(codeStr.substring(1));
+    if (isNaN(counterNumber) || isNaN(rawNumber)) {
+      return res.status(400).json({ error: 'customerCode không hợp lệ' });
+    }
+
+    // Tìm dịch vụ tương ứng counterNumber
+    let matchedService = null;
+    for (const [svc, num] of Object.entries(serviceToCounter)) {
+      if (parseInt(num) === counterNumber) {
+        matchedService = svc;
+        break;
       }
+    }
+    if (!matchedService) {
+      return res.status(400).json({ error: 'Không xác định được dịch vụ từ customerCode' });
+    }
+
+    // Lấy counter record
+    const counter = await Counter.findOne({ service: matchedService });
+    if (!counter) {
+      return res.status(400).json({ error: 'Không tìm thấy quầy dịch vụ' });
+    }
+
+    // Chỉ cho phép đánh giá khi rawNumber đúng là số đang gọi (calledNumber)
+    if ((counter.calledNumber || 0) !== rawNumber) {
+      return res.status(400).json({ error: 'Chỉ được đánh giá khi đang gọi đúng số khách hàng' });
+    }
+
+    // Chặn đánh giá trùng lặp (chỉ cho phép 1 lần/khách hàng)
+    const existing = await Rating.findOne({ customerCode: ratingDoc.customerCode });
+    if (existing) {
+      console.log('⚠️ Duplicate rating attempt for customerCode=', ratingDoc.customerCode);
+      return res.status(409).json({ error: 'Khách hàng đã được đánh giá trước đó' });
     }
 
     await ratingDoc.save();
