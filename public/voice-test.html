@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test giọng nói Việt Nam</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      min-height: 100vh;
+    }
+    .container { 
+      max-width: 900px; 
+      margin: 0 auto; 
+      background: white; 
+      padding: 30px; 
+      border-radius: 15px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+    }
+    h1 { 
+      color: #1976d2; 
+      text-align: center; 
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+    .voice-item { 
+      background: #f8f9fa; 
+      padding: 20px; 
+      margin: 15px 0; 
+      border-radius: 10px; 
+      border-left: 5px solid #1976d2; 
+      transition: all 0.3s ease;
+    }
+    .voice-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .voice-name { 
+      font-weight: bold; 
+      color: #333; 
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    .voice-lang { 
+      color: #666; 
+      font-size: 14px; 
+      margin-bottom: 10px;
+    }
+    button { 
+      background: #4caf50; 
+      color: white; 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      margin: 5px; 
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    button:hover { 
+      background: #45a049; 
+      transform: translateY(-1px);
+    }
+    .test-section { 
+      background: linear-gradient(135deg, #e3f2fd, #f3e5f5); 
+      padding: 25px; 
+      border-radius: 12px; 
+      margin: 25px 0; 
+      border: 1px solid #e0e0e0;
+    }
+    input[type="text"] { 
+      width: 100%; 
+      padding: 12px; 
+      margin: 15px 0; 
+      border: 2px solid #ddd; 
+      border-radius: 8px; 
+      box-sizing: border-box; 
+      font-size: 14px;
+    }
+    input[type="text"]:focus {
+      border-color: #1976d2;
+      outline: none;
+    }
+    .controls { 
+      display: flex; 
+      gap: 15px; 
+      align-items: center; 
+      margin: 15px 0; 
+      flex-wrap: wrap;
+    }
+    label { 
+      min-width: 80px; 
+      font-weight: 500;
+    }
+    input[type="range"] {
+      flex: 1;
+      min-width: 100px;
+    }
+    .section-title {
+      color: #1976d2;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 5px solid #f44336;
+    }
+    .success-message {
+      background: #e8f5e8;
+      color: #2e7d32;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 5px solid #4caf50;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 Test Giọng Nói Việt Nam</h1>
+    
+    <div class="test-section">
+      <h3>🎯 Test Nhanh</h3>
+      <input type="text" 
+             id="testText" 
+             value="Xin mời quý khách số thứ tự một trăm hai mười ba đến quầy số một để thực hiện thủ tục hành chính" 
+             placeholder="Nhập văn bản để test...">
+      
+      <div class="controls">
+        <label>Tốc độ:</label>
+        <input type="range" id="rateSlider" min="0.1" max="2" step="0.1" value="0.8">
+        <span id="rateValue">0.8</span>
+      </div>
+      
+      <div class="controls">
+        <label>Cao độ:</label>
+        <input type="range" id="pitchSlider" min="0" max="2" step="0.1" value="1.2">
+        <span id="pitchValue">1.2</span>
+      </div>
+      
+      <div class="controls">
+        <label>Âm lượng:</label>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+        <span id="volumeValue">1.0</span>
+      </div>
+      
+      <button onclick="testSelectedVoice()" style="background: #ff9800; font-size: 16px; padding: 12px 24px;">
+        🎯 Test với giọng được chọn
+      </button>
+      <button onclick="testAllVietnameseVoices()" style="background: #9c27b0; font-size: 16px; padding: 12px 24px;">
+        🎭 Test tất cả giọng Việt
+      </button>
+      <button onclick="stopSpeaking()" style="background: #f44336; font-size: 16px; padding: 12px 24px;">
+        🛑 Dừng phát âm
+      </button>
+      <button onclick="debugVoices()" style="background: #607d8b; font-size: 16px; padding: 12px 24px;">
+        🔍 Debug giọng nói
+      </button>
+    </div>
+
+    <h3 class="section-title">📋 Danh sách tất cả giọng nói có sẵn</h3>
+    <div id="voicesList">
+      <div style="text-align: center; padding: 20px; color: #666;">
+        🔄 Đang tải danh sách giọng nói...
+      </div>
+    </div>
+
+    <h3 class="section-title">🇻🇳 Giọng nữ Việt Nam được đề xuất</h3>
+    <div id="vietnameseVoices">
+      <div style="text-align: center; padding: 20px; color: #666;">
+        🔍 Đang tìm giọng nữ Việt Nam...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allVoices = [];
+    let selectedVoice = null;
+
+    // Cập nhật giá trị slider
+    function setupSliders() {
+      const rateSlider = document.getElementById('rateSlider');
+      const pitchSlider = document.getElementById('pitchSlider');
+      const volumeSlider = document.getElementById('volumeSlider');
+      
+      rateSlider.addEventListener('input', (e) => {
+        document.getElementById('rateValue').textContent = e.target.value;
+      });
+      
+      pitchSlider.addEventListener('input', (e) => {
+        document.getElementById('pitchValue').textContent = e.target.value;
+      });
+      
+      volumeSlider.addEventListener('input', (e) => {
+        document.getElementById('volumeValue').textContent = e.target.value;
+      });
+    }
+
+    function loadVoices() {
+      try {
+        allVoices = speechSynthesis.getVoices();
+        
+        if (allVoices.length === 0) {
+          setTimeout(loadVoices, 200);
+          return;
+        }
+
+        console.log('✅ Đã tải', allVoices.length, 'giọng nói');
+        displayAllVoices();
+        displayVietnameseVoices();
+        
+      } catch (error) {
+        console.error('Lỗi khi tải giọng nói:', error);
+        showError('Không thể tải danh sách giọng nói');
+      }
+    }
+
+    function displayAllVoices() {
+      const container = document.getElementById('voicesList');
+      
+      if (allVoices.length === 0) {
+        container.innerHTML = '<div class="error-message">❌ Không tìm thấy giọng nói nào</div>';
+        return;
+      }
+
+      const voicesHtml = allVoices.map((voice, index) => `
+        <div class="voice-item">
+          <div class="voice-name">${voice.name}</div>
+          <div class="voice-lang">
+            🌐 ${voice.lang} | 
+            📍 ${voice.localService ? 'Cục bộ' : 'Trực tuyến'} | 
+            ${voice.default ? '⭐ Mặc định' : ''}
+          </div>
+          <button onclick="testVoice(${index})">🎵 Test</button>
+          <button onclick="selectVoice(${index})" style="background: #2196f3;">✅ Chọn</button>
+        </div>
+      `).join('');
+      
+      container.innerHTML = voicesHtml;
+    }
+
+    function displayVietnameseVoices() {
+      const container = document.getElementById('vietnameseVoices');
+      
+      const vietnameseVoices = allVoices.filter(voice => 
+        voice.lang.toLowerCase().includes('vi') || 
+        voice.name.toLowerCase().includes('vietnam') ||
+        voice.name.toLowerCase().includes('vietnamese')
+      );
+
+      if (vietnameseVoices.length === 0) {
+        container.innerHTML = '<div class="error-message">❌ Không tìm thấy giọng Việt Nam nào</div>';
+        return;
+      }
+
+      const voicesHtml = vietnameseVoices.map(voice => {
+        const originalIndex = allVoices.indexOf(voice);
+        const isMale = voice.name.toLowerCase().includes('male') || 
+                      voice.name.toLowerCase().includes('nam') ||
+                      voice.name.toLowerCase().includes('man');
+        const isFemale = voice.name.toLowerCase().includes('female') || 
+                        voice.name.toLowerCase().includes('nữ') ||
+                        voice.name.toLowerCase().includes('woman') ||
+                        voice.name.toLowerCase().includes('girl');
+        
+        const genderIcon = isFemale ? '👩' : (isMale ? '👨' : '🎭');
+        const genderText = isFemale ? '(Nữ)' : (isMale ? '(Nam)' : '');
+        const borderColor = isFemale ? '#e91e63' : (isMale ? '#1976d2' : '#4caf50');
+        
+        return `
+          <div class="voice-item" style="border-left-color: ${borderColor};">
+            <div class="voice-name">${genderIcon} ${voice.name} ${genderText}</div>
+            <div class="voice-lang">🌐 ${voice.lang} | 📍 ${voice.localService ? 'Cục bộ' : 'Trực tuyến'}</div>
+            <button onclick="testVoice(${originalIndex})">🎵 Test</button>
+            <button onclick="selectVoice(${originalIndex})" style="background: ${borderColor};">
+              ⭐ Chọn làm mặc định
+            </button>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = voicesHtml;
+
+      // Tự động chọn giọng nữ đầu tiên
+      const femaleVoice = vietnameseVoices.find(voice => 
+        voice.name.toLowerCase().includes('female') || 
+        voice.name.toLowerCase().includes('nữ') ||
+        voice.name.toLowerCase().includes('woman')
+      ) || vietnameseVoices[0];
+      
+      if (femaleVoice) {
+        selectedVoice = femaleVoice;
+        console.log('🎯 Đã chọn giọng mặc định:', femaleVoice.name);
+      }
+    }
+
+    function testVoice(voiceIndex) {
+      try {
+        const voice = allVoices[voiceIndex];
+        const text = document.getElementById('testText').value || "Xin chào, đây là test giọng nói";
+        
+        speechSynthesis.cancel(); // Dừng phát âm trước đó
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = voice;
+        utterance.lang = voice.lang || 'vi-VN';
+        utterance.rate = parseFloat(document.getElementById('rateSlider').value);
+        utterance.pitch = parseFloat(document.getElementById('pitchSlider').value);
+        utterance.volume = parseFloat(document.getElementById('volumeSlider').value);
+        
+        utterance.onstart = () => {
+          console.log('🎵 Bắt đầu phát:', voice.name);
+        };
+        
+        utterance.onend = () => {
+          console.log('✅ Hoàn thành phát:', voice.name);
+        };
+        
+        utterance.onerror = (event) => {
+          console.error('❌ Lỗi phát âm:', event.error);
+          showError('Lỗi khi phát âm: ' + event.error);
+        };
+        
+        speechSynthesis.speak(utterance);
+        
+      } catch (error) {
+        console.error('Lỗi test giọng:', error);
+        showError('Không thể test giọng nói này');
+      }
+    }
+
+    function selectVoice(voiceIndex) {
+      selectedVoice = allVoices[voiceIndex];
+      showSuccess(`✅ Đã chọn giọng: ${selectedVoice.name} (${selectedVoice.lang})`);
+    }
+
+    function testSelectedVoice() {
+      if (!selectedVoice) {
+        showError('❌ Vui lòng chọn một giọng nói trước');
+        return;
+      }
+      
+      const voiceIndex = allVoices.indexOf(selectedVoice);
+      testVoice(voiceIndex);
+    }
+
+    function testAllVietnameseVoices() {
+      const vietnameseVoices = allVoices.filter(voice => 
+        voice.lang.toLowerCase().includes('vi') || 
+        voice.name.toLowerCase().includes('vietnam') ||
+        voice.name.toLowerCase().includes('vietnamese')
+      );
+      
+      if (vietnameseVoices.length === 0) {
+        showError('❌ Không tìm thấy giọng Việt Nam nào');
+        return;
+      }
+      
+      const text = document.getElementById('testText').value || 
+                   "Xin mời quý khách số thứ tự một trăm hai mười ba đến quầy số một để thực hiện thủ tục hành chính";
+      
+      showSuccess(`🎭 Đang test ${vietnameseVoices.length} giọng Việt Nam...`);
+      
+      // Log chi tiết các giọng để debug
+      console.log('🔍 Danh sách giọng Việt Nam:', vietnameseVoices.map(v => ({
+        name: v.name,
+        lang: v.lang,
+        localService: v.localService
+      })));
+      
+      vietnameseVoices.forEach((voice, index) => {
+        setTimeout(() => {
+          console.log(`🎵 Test giọng ${index + 1}/${vietnameseVoices.length}:`, voice.name);
+          
+          const utterance = new SpeechSynthesisUtterance(`Giọng số ${index + 1}: ${text}`);
+          utterance.voice = voice;
+          utterance.lang = voice.lang || 'vi-VN';
+          utterance.rate = 0.7;
+          utterance.pitch = 1.3;
+          utterance.volume = 1.0;
+          
+          speechSynthesis.speak(utterance);
+        }, index * 5000); // Mỗi giọng cách nhau 5 giây
+      });
+    }
+
+    function debugVoices() {
+      console.log('🔍 DEBUG: Tất cả giọng nói có sẵn:');
+      allVoices.forEach((voice, index) => {
+        console.log(`${index + 1}. ${voice.name} | ${voice.lang} | ${voice.localService ? 'Local' : 'Remote'}`);
+      });
+      
+      const vietnameseVoices = allVoices.filter(voice => 
+        voice.lang.toLowerCase().includes('vi') || 
+        voice.name.toLowerCase().includes('vietnam') ||
+        voice.name.toLowerCase().includes('vietnamese')
+      );
+      
+      console.log('🇻🇳 Giọng Việt Nam tìm thấy:', vietnameseVoices.length);
+      vietnameseVoices.forEach((voice, index) => {
+        console.log(`🎤 ${index + 1}. ${voice.name} | ${voice.lang}`);
+      });
+    }
+
+    function stopSpeaking() {
+      speechSynthesis.cancel();
+      showSuccess('🛑 Đã dừng tất cả phát âm');
+    }
+
+    function showError(message) {
+      const container = document.querySelector('.container');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.innerHTML = message;
+      container.insertBefore(errorDiv, container.firstChild);
+      
+      setTimeout(() => {
+        if (errorDiv.parentNode) {
+          errorDiv.parentNode.removeChild(errorDiv);
+        }
+      }, 5000);
+    }
+
+    function showSuccess(message) {
+      const container = document.querySelector('.container');
+      const successDiv = document.createElement('div');
+      successDiv.className = 'success-message';
+      successDiv.innerHTML = message;
+      container.insertBefore(successDiv, container.firstChild);
+      
+      setTimeout(() => {
+        if (successDiv.parentNode) {
+          successDiv.parentNode.removeChild(successDiv);
+        }
+      }, 3000);
+    }
+
+    // Khởi tạo khi trang load
+    document.addEventListener('DOMContentLoaded', function() {
+      setupSliders();
+      loadVoices();
+      
+      // Lắng nghe sự kiện voices changed
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    });
+  </script>
+</body>
+</html>

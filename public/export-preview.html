@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo - Xem trước báo cáo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 3vh;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      font-size: 3vh;
+      margin-bottom: 3vh;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .preview-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 2vh;
+      margin-bottom: 3vh;
+    }
+
+    .tab-btn {
+      padding: 1.5vh 3vh;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1.4vh;
+      font-weight: 600;
+    }
+
+    .tab-btn.active {
+      background: rgba(0, 255, 136, 0.3);
+      border-color: #00ff88;
+      color: #00ff88;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .preview-content {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      padding: 3vh;
+      min-height: 60vh;
+      color: #333;
+      display: none;
+    }
+
+    .preview-content.active {
+      display: block;
+    }
+
+    .excel-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2vh 0;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .excel-table th,
+    .excel-table td {
+      padding: 1.2vh 1.5vh;
+      text-align: left;
+      border: 1px solid #ddd;
+      font-size: 1.3vh;
+    }
+
+    .excel-table th {
+      background: #4CAF50;
+      color: white;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .excel-table .header-row {
+      background: #2196F3;
+      color: white;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .excel-table .section-header {
+      background: #FF9800;
+      color: white;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .excel-table .summary-row {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .highlight-good {
+      background: #e8f5e8;
+      color: #2e7d2e;
+      font-weight: 600;
+    }
+
+    .highlight-warning {
+      background: #fff3cd;
+      color: #856404;
+      font-weight: 600;
+    }
+
+    .highlight-danger {
+      background: #f8d7da;
+      color: #721c24;
+      font-weight: 600;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2vh;
+      margin: 2vh 0;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 2vh;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 3vh;
+      font-weight: 700;
+      margin-bottom: 1vh;
+    }
+
+    .stat-label {
+      font-size: 1.2vh;
+      opacity: 0.9;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 3vh;
+      right: 3vh;
+      padding: 1.5vh 3vh;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .chart-placeholder {
+      background: #f8f9fa;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 4vh;
+      text-align: center;
+      color: #666;
+      margin: 2vh 0;
+    }
+  </style>
+</head>
+<body>
+  <a href="export-professional.html" class="back-btn">← Quay lại</a>
+  
+  <div class="container">
+    <h1>📊 Xem trước báo cáo xuất Excel</h1>
+    
+    <div class="preview-tabs">
+      <button class="tab-btn active" onclick="showPreview('comprehensive')">📋 Báo cáo tổng hợp</button>
+      <button class="tab-btn" onclick="showPreview('executive')">⚡ Báo cáo điều hành</button>
+      <button class="tab-btn" onclick="showPreview('analytical')">🔬 Báo cáo phân tích</button>
+    </div>
+
+    <!-- Comprehensive Report Preview -->
+    <div id="comprehensive" class="preview-content active">
+      <h2>📋 Báo cáo tổng hợp - Xem trước Excel</h2>
+      <p><strong>Mô tả:</strong> Báo cáo đầy đủ với thống kê tổng quan, phân tích xu hướng, và chi tiết từng đánh giá.</p>
+      
+      <h3>📊 Sheet 1: Tổng quan</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="2">BÁO CÁO TỔNG HỢP HỆ THỐNG ĐÁNH GIÁ DỊCH VỤ</td>
+        </tr>
+        <tr>
+          <td><strong>Thời gian xuất báo cáo:</strong></td>
+          <td>25/12/2024 10:30:45</td>
+        </tr>
+        <tr>
+          <td><strong>Kỳ báo cáo:</strong></td>
+          <td>01/12/2024 - 25/12/2024</td>
+        </tr>
+        <tr><td colspan="2"></td></tr>
+        <tr class="section-header">
+          <td colspan="2">CHỈ SỐ QUAN TRỌNG</td>
+        </tr>
+        <tr>
+          <td>Tổng số đánh giá:</td>
+          <td class="highlight-good">156</td>
+        </tr>
+        <tr>
+          <td>Điểm trung bình:</td>
+          <td class="highlight-good">4.2</td>
+        </tr>
+        <tr>
+          <td>Tỷ lệ hài lòng:</td>
+          <td class="highlight-good">84.6%</td>
+        </tr>
+        <tr>
+          <td>Số dịch vụ:</td>
+          <td>4</td>
+        </tr>
+        <tr><td colspan="2"></td></tr>
+        <tr class="section-header">
+          <td colspan="2">THỐNG KÊ MÃ KHÁCH HÀNG</td>
+        </tr>
+        <tr>
+          <td>Có mã khách hàng:</td>
+          <td class="highlight-good">142</td>
+        </tr>
+        <tr>
+          <td>Không có mã:</td>
+          <td class="highlight-warning">14</td>
+        </tr>
+        <tr>
+          <td>Tỷ lệ có mã:</td>
+          <td class="highlight-good">91.0%</td>
+        </tr>
+      </table>
+
+      <h3>📈 Sheet 2: Xu hướng theo ngày</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="4">XU HƯỚNG THEO NGÀY</td>
+        </tr>
+        <tr>
+          <th>Ngày</th>
+          <th>Số lượng</th>
+          <th>Điểm TB</th>
+          <th>Tỷ lệ hài lòng (%)</th>
+        </tr>
+        <tr>
+          <td>2024-12-23</td>
+          <td>12</td>
+          <td class="highlight-good">4.3</td>
+          <td class="highlight-good">91.7</td>
+        </tr>
+        <tr>
+          <td>2024-12-24</td>
+          <td>8</td>
+          <td class="highlight-good">4.1</td>
+          <td class="highlight-good">87.5</td>
+        </tr>
+        <tr>
+          <td>2024-12-25</td>
+          <td>6</td>
+          <td class="highlight-good">4.5</td>
+          <td class="highlight-good">100.0</td>
+        </tr>
+      </table>
+
+      <h3>🏢 Sheet 3: Phân tích theo dịch vụ</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="4">PHÂN TÍCH THEO DỊCH VỤ</td>
+        </tr>
+        <tr>
+          <th>Dịch vụ</th>
+          <th>Số lượng</th>
+          <th>Điểm TB</th>
+          <th>Tỷ lệ hài lòng (%)</th>
+        </tr>
+        <tr>
+          <td>Quầy 1 - Thủ tục hành chính</td>
+          <td class="highlight-good">45</td>
+          <td class="highlight-good">4.3</td>
+          <td class="highlight-good">88.9</td>
+        </tr>
+        <tr>
+          <td>Quầy 2 - Cấp giấy tờ</td>
+          <td class="highlight-good">38</td>
+          <td class="highlight-good">4.1</td>
+          <td class="highlight-good">84.2</td>
+        </tr>
+        <tr>
+          <td>Quầy 3 - Tư vấn pháp lý</td>
+          <td>35</td>
+          <td class="highlight-warning">3.9</td>
+          <td class="highlight-warning">77.1</td>
+        </tr>
+        <tr>
+          <td>Quầy 4 - Dịch vụ khác</td>
+          <td>38</td>
+          <td class="highlight-good">4.4</td>
+          <td class="highlight-good">92.1</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Executive Report Preview -->
+    <div id="executive" class="preview-content">
+      <h2>⚡ Báo cáo điều hành - Xem trước Excel</h2>
+      <p><strong>Mô tả:</strong> Báo cáo ngắn gọn với các chỉ số quan trọng, thích hợp cho họp điều hành hàng ngày.</p>
+      
+      <h3>📊 Bảng điều khiển KPI</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="3">BÁO CÁO ĐIỀU HÀNH - HỆ THỐNG ĐÁNH GIÁ DỊCH VỤ</td>
+        </tr>
+        <tr>
+          <td><strong>Thời gian:</strong></td>
+          <td colspan="2">25/12/2024 10:30:45</td>
+        </tr>
+        <tr>
+          <td><strong>Kỳ báo cáo:</strong></td>
+          <td colspan="2">01/12/2024 - 25/12/2024</td>
+        </tr>
+        <tr><td colspan="3"></td></tr>
+        <tr class="section-header">
+          <td colspan="3">BẢNG ĐIỀU KHIỂN KPI</td>
+        </tr>
+        <tr>
+          <th>Chỉ số</th>
+          <th>Giá trị</th>
+          <th>Trạng thái</th>
+        </tr>
+        <tr>
+          <td>Tổng đánh giá</td>
+          <td>156</td>
+          <td class="highlight-good">✅ Tốt</td>
+        </tr>
+        <tr>
+          <td>Điểm trung bình</td>
+          <td>4.20</td>
+          <td class="highlight-good">✅ Tốt</td>
+        </tr>
+        <tr>
+          <td>Tỷ lệ hài lòng</td>
+          <td>84.6%</td>
+          <td class="highlight-good">✅ Tốt</td>
+        </tr>
+        <tr><td colspan="3"></td></tr>
+        <tr class="section-header">
+          <td colspan="3">TOP 5 DỊCH VỤ</td>
+        </tr>
+        <tr>
+          <th>Dịch vụ</th>
+          <th>Số lượng</th>
+          <th>Điểm TB</th>
+        </tr>
+        <tr>
+          <td>Quầy 1 - Thủ tục hành chính</td>
+          <td>45</td>
+          <td class="highlight-good">4.30</td>
+        </tr>
+        <tr>
+          <td>Quầy 2 - Cấp giấy tờ</td>
+          <td>38</td>
+          <td class="highlight-good">4.10</td>
+        </tr>
+        <tr>
+          <td>Quầy 4 - Dịch vụ khác</td>
+          <td>38</td>
+          <td class="highlight-good">4.40</td>
+        </tr>
+      </table>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">156</div>
+          <div class="stat-label">Tổng đánh giá</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">84.6%</div>
+          <div class="stat-label">Tỷ lệ hài lòng</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">4.2⭐</div>
+          <div class="stat-label">Điểm trung bình</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Dịch vụ hoạt động</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytical Report Preview -->
+    <div id="analytical" class="preview-content">
+      <h2>🔬 Báo cáo phân tích - Xem trước Excel</h2>
+      <p><strong>Mô tả:</strong> Báo cáo chuyên sâu với phân tích thống kê nâng cao, tương quan giữa các yếu tố.</p>
+      
+      <h3>📊 Sheet 1: Phân tích thống kê</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="2">PHÂN TÍCH THỐNG KÊ NÂNG CAO</td>
+        </tr>
+        <tr><td colspan="2"></td></tr>
+        <tr class="section-header">
+          <td colspan="2">THỐNG KÊ MÔ TẢ</td>
+        </tr>
+        <tr>
+          <td>Trung bình:</td>
+          <td class="highlight-good">4.203</td>
+        </tr>
+        <tr>
+          <td>Độ lệch chuẩn:</td>
+          <td>0.847</td>
+        </tr>
+        <tr>
+          <td>Trung vị:</td>
+          <td class="highlight-good">4.000</td>
+        </tr>
+        <tr>
+          <td>Mode (phổ biến nhất):</td>
+          <td class="highlight-good">5.000</td>
+        </tr>
+        <tr>
+          <td>Hệ số biến thiên:</td>
+          <td>20.15%</td>
+        </tr>
+      </table>
+
+      <h3>🔍 Sheet 2: Tương quan dữ liệu</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="3">PHÂN TÍCH TƯƠNG QUAN</td>
+        </tr>
+        <tr>
+          <th>Yếu tố</th>
+          <th>Tương quan với điểm đánh giá</th>
+          <th>Ý nghĩa</th>
+        </tr>
+        <tr>
+          <td>Thời gian chờ</td>
+          <td class="highlight-warning">-0.65</td>
+          <td>Tương quan âm mạnh</td>
+        </tr>
+        <tr>
+          <td>Thái độ nhân viên</td>
+          <td class="highlight-good">+0.82</td>
+          <td>Tương quan dương rất mạnh</td>
+        </tr>
+        <tr>
+          <td>Chất lượng dịch vụ</td>
+          <td class="highlight-good">+0.91</td>
+          <td>Tương quan dương rất mạnh</td>
+        </tr>
+        <tr>
+          <td>Thời gian trong ngày</td>
+          <td class="highlight-warning">-0.23</td>
+          <td>Tương quan âm yếu</td>
+        </tr>
+      </table>
+
+      <h3>💡 Sheet 3: Đề xuất cải thiện</h3>
+      <table class="excel-table">
+        <tr class="header-row">
+          <td colspan="2">ĐỀ XUẤT CẢI THIỆN</td>
+        </tr>
+        <tr><td colspan="2"></td></tr>
+        <tr class="section-header">
+          <td colspan="2">KHUYẾN NGHỊ ƯU TIÊN CAO</td>
+        </tr>
+        <tr>
+          <td class="highlight-good">✅ Điểm mạnh:</td>
+          <td>Tỷ lệ hài lòng cao (84.6%), điểm trung bình tốt (4.2/5)</td>
+        </tr>
+        <tr>
+          <td class="highlight-warning">⚠️ Cần cải thiện:</td>
+          <td>Quầy 3 - Tư vấn pháp lý có điểm thấp nhất (3.9/5)</td>
+        </tr>
+        <tr>
+          <td class="highlight-danger">🔴 Hành động khuyến nghị:</td>
+          <td>Đào tạo lại nhân viên Quầy 3, cải thiện quy trình tư vấn</td>
+        </tr>
+        <tr><td colspan="2"></td></tr>
+        <tr class="section-header">
+          <td colspan="2">KHUYẾN NGHỊ THEO DỊCH VỤ</td>
+        </tr>
+        <tr>
+          <td>Quầy 1:</td>
+          <td class="highlight-good">Duy trì chất lượng hiện tại</td>
+        </tr>
+        <tr>
+          <td>Quầy 2:</td>
+          <td class="highlight-good">Tốt, có thể cải thiện nhẹ</td>
+        </tr>
+        <tr>
+          <td>Quầy 3:</td>
+          <td class="highlight-danger">Cần cải thiện ngay (77.1% hài lòng)</td>
+        </tr>
+        <tr>
+          <td>Quầy 4:</td>
+          <td class="highlight-good">Xuất sắc, có thể làm mẫu</td>
+        </tr>
+      </table>
+
+      <div class="chart-placeholder">
+        📊 Biểu đồ phân tích tương quan sẽ được tạo tự động trong file Excel xuất ra
+        <br><br>
+        🎯 Bao gồm: Scatter plot, Histogram, Box plot, Trend analysis
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showPreview(type) {
+      // Hide all previews
+      document.querySelectorAll('.preview-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Remove active from all tabs
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Show selected preview
+      document.getElementById(type).classList.add('active');
+      
+      // Add active to clicked tab
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

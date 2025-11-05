@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Simple Workflow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px; padding: 15px 25px; font-size: 16px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .result { margin-top: 10px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Test LaySo Workflow</h1>
+    
+    <div class="section">
+        <h3>🏠 KHÁCH HÀNG - Lấy số</h3>
+        <button onclick="getNumber()">Lấy số cho "Chứng thực Hộ tịch"</button>
+        <div id="get-result" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>👨‍💼 STAFF - Xem hàng đợi</h3>
+        <button onclick="checkStats()">Xem thống kê hàng đợi</button>
+        <div id="stats-result" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>📞 STAFF - Gọi khách</h3>
+        <button onclick="callNext()">Gọi khách tiếp theo</button>
+        <div id="call-result" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>🔧 ADMIN - Reset</h3>
+        <button onclick="resetCounters()">Reset tất cả counters</button>
+        <div id="reset-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://layso.onrender.com';
+        const SERVICE = "Chứng thực Hộ tịch";
+        
+        async function getNumber() {
+            try {
+                const response = await fetch(`${API_BASE}/get-number`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service: SERVICE })
+                });
+                const data = await response.json();
+                document.getElementById('get-result').innerHTML = 
+                    `<strong>Thành công!</strong><br>Số: ${data.number}<br>Service: ${data.service}`;
+            } catch (error) {
+                document.getElementById('get-result').innerHTML = 
+                    `<strong>Lỗi:</strong> ${error.message}`;
+            }
+        }
+        
+        async function checkStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+                const stats = data.serviceStats[SERVICE];
+                document.getElementById('stats-result').innerHTML = 
+                    `<strong>Thống kê:</strong><br>
+                    Đang chờ: ${stats.waiting}<br>
+                    Số cuối gọi: ${stats.lastCalled}<br>
+                    Tổng đã lấy: ${stats.currentNumber}<br>
+                    Đã gọi: ${stats.calledNumber}`;
+            } catch (error) {
+                document.getElementById('stats-result').innerHTML = 
+                    `<strong>Lỗi:</strong> ${error.message}`;
+            }
+        }
+        
+        async function callNext() {
+            try {
+                const response = await fetch(`${API_BASE}/call-next`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service: SERVICE })
+                });
+                const data = await response.json();
+                document.getElementById('call-result').innerHTML = 
+                    `<strong>Đã gọi!</strong><br>
+                    Số: ${data.number}<br>
+                    Còn chờ: ${data.waitingCount}<br>
+                    Message: ${data.message}`;
+            } catch (error) {
+                document.getElementById('call-result').innerHTML = 
+                    `<strong>Lỗi:</strong> ${error.message}`;
+            }
+        }
+        
+        async function resetCounters() {
+            try {
+                const response = await fetch(`${API_BASE}/fix-counters`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                document.getElementById('reset-result').innerHTML = 
+                    `<strong>Reset thành công!</strong><br>${data.message}`;
+            } catch (error) {
+                document.getElementById('reset-result').innerHTML = 
+                    `<strong>Lỗi:</strong> ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

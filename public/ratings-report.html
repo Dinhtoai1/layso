@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Báo cáo đánh giá mức độ hài lòng</title>
+  <style>
+  body { 
+    font-family: Arial, sans-serif; 
+    background: #f8f8f8; 
+    margin: 0; 
+    padding: 20px; 
+  }
+  .container { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    background: white; 
+    padding: 30px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  }
+  h1 { 
+    text-align: center; 
+    color: #1976d2; 
+    margin-bottom: 30px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .stat-card {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  }
+  .stat-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    opacity: 0.9;
+  }
+  .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0;
+  }
+  .star-display {
+    font-size: 24px;
+    color: #ffc107;
+    margin-top: 5px;
+  }
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .refresh-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .refresh-btn:hover {
+    background: #45a049;
+  }
+  .back-btn {
+    background: #757575;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .back-btn:hover {
+    background: #616161;
+  }
+  .filter-section {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .filter-section select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  .ratings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  .ratings-table th,
+  .ratings-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  .ratings-table th {
+    background: #f5f5f5;
+    font-weight: bold;
+    color: #333;
+  }
+  .ratings-table tr:hover {
+    background: #f9f9f9;
+  }
+  .rating-stars {
+    color: #ffc107;
+    font-size: 16px;
+  }
+  .comment-cell {
+    max-width: 300px;
+    word-wrap: break-word;
+  }
+  .no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+  }
+  .service-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  .service-stat-card {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+  }
+  .service-stat-card h4 {
+    margin: 0 0 10px 0;
+    color: #1976d2;
+    font-size: 14px;
+  }
+  .service-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    font-size: 12px;
+  }
+  .service-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .service-stat-stars {
+    color: #ffc107;
+    font-size: 12px;
+  }
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+  @media (max-width: 768px) {
+    .container {
+      margin: 10px;
+      padding: 20px;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filter-section {
+      justify-content: center;
+    }
+    .ratings-table {
+      font-size: 14px;
+    }
+    .ratings-table th,
+    .ratings-table td {
+      padding: 8px 4px;
+    }
+    .comment-cell {
+      max-width: 150px;
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Báo cáo đánh giá mức độ hài lòng</h1>
+    
+    <div class="controls">
+      <button class="back-btn" onclick="goBack()">Quay lại</button>
+      <div class="filter-section">
+        <select id="sortOrder">
+          <option value="newest">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
+          <option value="highest">Điểm cao nhất</option>
+          <option value="lowest">Điểm thấp nhất</option>
+        </select>
+      </div>
+      <button class="refresh-btn" onclick="loadRatingsReport()">Làm mới</button>
+      <button class="refresh-btn" onclick="exportToExcel()" style="background: #ff9800;">📥 Xuất Excel</button>
+      <button class="back-btn" onclick="goBack()">Quay lại</button>
+    </div>
+
+    <div id="loadingMessage" class="loading">Đang tải dữ liệu...</div>
+    
+    <div id="reportContent" style="display: none;">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Tổng số đánh giá</h3>
+          <p class="stat-value" id="totalRatings">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Chất lượng phục vụ</h3>
+          <p class="stat-value" id="avgService">0</p>
+          <div class="star-display" id="starsService"></div>
+        </div>
+        <div class="stat-card">
+          <h3>Thời gian xử lý</h3>
+          <p class="stat-value" id="avgTime">0</p>
+          <div class="star-display" id="starsTime"></div>
+        </div>
+        <div class="stat-card">
+          <h3>Thái độ nhân viên</h3>
+          <p class="stat-value" id="avgAttitude">0</p>
+          <div class="star-display" id="starsAttitude"></div>
+        </div>
+        <div class="stat-card">
+          <h3>Đánh giá tổng thể</h3>
+          <p class="stat-value" id="avgOverall">0</p>
+          <div class="star-display" id="starsOverall"></div>
+        </div>
+      </div>
+
+      <!-- Thống kê theo lĩnh vực -->
+      <h3 style="margin-top: 30px; margin-bottom: 20px; color: #1976d2;">Thống kê theo lĩnh vực dịch vụ</h3>
+      <div id="serviceStatsContainer"></div>
+
+      <h3 style="margin-top: 30px; margin-bottom: 20px; color: #1976d2;">Chi tiết đánh giá</h3>
+      <table class="ratings-table">
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Lĩnh vực</th>
+            <th>Phục vụ</th>
+            <th>Thời gian</th>
+            <th>Thái độ</th>
+            <th>Tổng thể</th>
+            <th>Ý kiến</th>
+          </tr>
+        </thead>
+        <tbody id="ratingsTableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <div id="noDataMessage" class="no-data" style="display: none;">
+      Chưa có đánh giá nào được ghi nhận.
+    </div>
+  </div>
+
+  <script>
+    let ratingsData = [];
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function createStars(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = (rating - fullStars) >= 0.5;
+      let stars = '';
+      
+      for (let i = 0; i < fullStars; i++) {
+        stars += '★';
+      }
+      if (hasHalfStar) {
+        stars += '☆';
+      }
+      const remainingStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+      for (let i = 0; i < remainingStars; i++) {
+        stars += '☆';
+      }
+      
+      return stars;
+    }
+
+    function updateStatistics(data) {
+      document.getElementById('totalRatings').textContent = data.totalRatings;
+      
+      if (data.totalRatings > 0) {
+        // Xử lý averages - có thể null nếu không có format cũ
+        const averages = data.averages || { serviceRating: 0, time: 0, attitude: 0, overall: 0 };
+        
+        document.getElementById('avgService').textContent = averages.serviceRating || '0.00';
+        document.getElementById('avgTime').textContent = averages.time || '0.00';
+        document.getElementById('avgAttitude').textContent = averages.attitude || '0.00';
+        document.getElementById('avgOverall').textContent = averages.overall || '0.00';
+        
+        document.getElementById('starsService').textContent = createStars(parseFloat(averages.serviceRating || 0));
+        document.getElementById('starsTime').textContent = createStars(parseFloat(averages.time || 0));
+        document.getElementById('starsAttitude').textContent = createStars(parseFloat(averages.attitude || 0));
+        document.getElementById('starsOverall').textContent = createStars(parseFloat(averages.overall || 0));
+        
+        // Hiển thị thông tin format mới nếu có
+        if (data.newFormatAverage && data.newFormatCount > 0) {
+          const newFormatInfo = document.createElement('div');
+          newFormatInfo.style.cssText = 'margin-top: 10px; padding: 10px; background: #e8f5e8; border-radius: 5px; font-size: 12px;';
+          newFormatInfo.innerHTML = `
+            <strong>📊 Thống kê format mới:</strong><br>
+            Số đánh giá: ${data.newFormatCount}<br>
+            Điểm trung bình: ${data.newFormatAverage} ⭐
+          `;
+          
+          // Thêm vào stat card đầu tiên nếu chưa có
+          const firstStatCard = document.querySelector('.stat-card');
+          if (firstStatCard && !firstStatCard.querySelector('.new-format-info')) {
+            newFormatInfo.className = 'new-format-info';
+            firstStatCard.appendChild(newFormatInfo);
+          }
+        }
+      }
+
+      // Cập nhật thống kê theo lĩnh vực
+      updateServiceStats(data.serviceStats);
+    }
+
+    function updateServiceStats(serviceStats) {
+      const container = document.getElementById('serviceStatsContainer');
+      container.innerHTML = '';
+      
+      if (!serviceStats || Object.keys(serviceStats).length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">Chưa có dữ liệu thống kê theo lĩnh vực</p>';
+        return;
+      }
+
+      const statsGrid = document.createElement('div');
+      statsGrid.className = 'service-stats';
+      
+      Object.entries(serviceStats).forEach(([service, stats]) => {
+        const card = document.createElement('div');
+        card.className = 'service-stat-card';
+        
+        card.innerHTML = `
+          <h4>${service} (${stats.count} đánh giá)</h4>
+          <div class="service-stat-grid">
+            <div class="service-stat-item">
+              <span>Phục vụ:</span>
+              <div>
+                <span class="service-stat-stars">${createStars(parseFloat(stats.averages.serviceRating))}</span>
+                <span style="margin-left: 5px;">(${stats.averages.serviceRating})</span>
+              </div>
+            </div>
+            <div class="service-stat-item">
+              <span>Thời gian:</span>
+              <div>
+                <span class="service-stat-stars">${createStars(parseFloat(stats.averages.time))}</span>
+                <span style="margin-left: 5px;">(${stats.averages.time})</span>
+              </div>
+            </div>
+            <div class="service-stat-item">
+              <span>Thái độ:</span>
+              <div>
+                <span class="service-stat-stars">${createStars(parseFloat(stats.averages.attitude))}</span>
+                <span style="margin-left: 5px;">(${stats.averages.attitude})</span>
+              </div>
+            </div>
+            <div class="service-stat-item">
+              <span>Tổng thể:</span>
+              <div>
+                <span class="service-stat-stars">${createStars(parseFloat(stats.averages.overall))}</span>
+                <span style="margin-left: 5px;">(${stats.averages.overall})</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        statsGrid.appendChild(card);
+      });
+      
+      container.appendChild(statsGrid);
+    }
+
+    function sortRatings(ratings, sortOrder) {
+      const sortedRatings = [...ratings];
+      
+      switch (sortOrder) {
+        case 'newest':
+          return sortedRatings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        case 'oldest':
+          return sortedRatings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        case 'highest':
+          return sortedRatings.sort((a, b) => b.overall - a.overall);
+        case 'lowest':
+          return sortedRatings.sort((a, b) => a.overall - b.overall);
+        default:
+          return sortedRatings;
+      }
+    }
+
+    function updateTable() {
+      const sortOrder = document.getElementById('sortOrder').value;
+      const sortedRatings = sortRatings(ratingsData, sortOrder);
+      
+      const tbody = document.getElementById('ratingsTableBody');
+      tbody.innerHTML = '';
+      
+      sortedRatings.forEach(rating => {
+        const row = document.createElement('tr');
+        
+        // Kiểm tra format đánh giá (cũ có đầy đủ các trường, mới chỉ có overall)
+        const isOldFormat = rating.serviceRating !== undefined && 
+                           rating.time !== undefined && 
+                           rating.attitude !== undefined;
+        
+        if (isOldFormat) {
+          // Format cũ - hiển thị đầy đủ
+          row.innerHTML = `
+            <td>${formatDate(rating.timestamp)}</td>
+            <td style="font-weight: bold; color: #1976d2;">${rating.service}</td>
+            <td><span class="rating-stars">${createStars(rating.serviceRating)}</span> (${rating.serviceRating})</td>
+            <td><span class="rating-stars">${createStars(rating.time)}</span> (${rating.time})</td>
+            <td><span class="rating-stars">${createStars(rating.attitude)}</span> (${rating.attitude})</td>
+            <td><span class="rating-stars">${createStars(rating.overall)}</span> (${rating.overall})</td>
+            <td class="comment-cell">${rating.comment || 'Không có ý kiến'}</td>
+          `;
+        } else {
+          // Format mới - chỉ hiển thị overall, các trường khác để trống
+          row.innerHTML = `
+            <td>${formatDate(rating.timestamp)}</td>
+            <td style="font-weight: bold; color: #1976d2;">${rating.service}</td>
+            <td style="color: #999; font-style: italic;">-</td>
+            <td style="color: #999; font-style: italic;">-</td>
+            <td style="color: #999; font-style: italic;">-</td>
+            <td><span class="rating-stars">${createStars(rating.overall)}</span> (${rating.overall})</td>
+            <td class="comment-cell">${rating.comment || 'Không có ý kiến'}</td>
+          `;
+        }
+        
+        // Thêm customer code nếu có
+        if (rating.customerCode && rating.customerCode.trim()) {
+          const customerCodeSpan = `<br><small style="color: #4caf50; font-weight: bold;">Mã KH: ${rating.customerCode}</small>`;
+          const serviceCell = row.children[1];
+          serviceCell.innerHTML += customerCodeSpan;
+        }
+        
+        tbody.appendChild(row);
+      });
+    }
+
+    async function loadRatingsReport() {
+      try {
+        document.getElementById('loadingMessage').style.display = 'block';
+        document.getElementById('reportContent').style.display = 'none';
+        document.getElementById('noDataMessage').style.display = 'none';
+
+        const response = await fetch('/ratings-report');
+        const data = await response.json();
+
+        document.getElementById('loadingMessage').style.display = 'none';
+
+        if (data.totalRatings === 0) {
+          document.getElementById('noDataMessage').style.display = 'block';
+        } else {
+          ratingsData = data.ratings;
+          updateStatistics(data);
+          updateTable();
+          document.getElementById('reportContent').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error loading ratings report:', error);
+        document.getElementById('loadingMessage').textContent = 'Có lỗi xảy ra khi tải dữ liệu.';
+      }
+    }
+
+    function goBack() {
+      window.location.href = 'admin.html';
+    }
+
+    // Export to Excel function (scientific format)
+    function exportToExcel() {
+      if (!ratingsData || ratingsData.length === 0) {
+        alert('❌ Không có dữ liệu để xuất');
+        return;
+      }
+
+      try {
+        // Tính toán thống kê tổng quan
+        const stats = calculateAdvancedStatistics(ratingsData);
+        const currentDate = new Date().toLocaleDateString('vi-VN');
+        const currentTime = new Date().toLocaleTimeString('vi-VN');
+        
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        
+        // Tiêu đề báo cáo
+        csvContent += "BÁO CÁO TỔNG HỢP ĐÁNH GIÁ MỨC ĐỘ HÀI LÒNG\n";
+        csvContent += "Hệ thống quản lý xếp hàng - Trung tâm phục vụ hành chính công\n";
+        csvContent += `"Ngày xuất báo cáo: ${currentDate} lúc ${currentTime}"\n`;
+        csvContent += `"Thời gian khảo sát: ${stats.surveyPeriod}"\n`;
+        csvContent += "\n";
+        
+        // Tóm tắt thống kê
+        csvContent += "TÓM TẮT KẾT QUẢ KHẢO SÁT\n";
+        csvContent += "Chỉ số,Giá trị\n";
+        csvContent += `"Tổng số phiếu đánh giá","${ratingsData.length}"\n`;
+        csvContent += `"Điểm trung bình chung","${stats.overallAverage}/5 sao"\n`;
+        csvContent += `"Tỷ lệ hài lòng (≥4 sao)","${stats.satisfactionRate}%"\n`;
+        csvContent += `"Phiếu đánh giá cao nhất","${stats.highestRating}/5 sao"\n`;
+        csvContent += `"Phiếu đánh giá thấp nhất","${stats.lowestRating}/5 sao"\n`;
+        csvContent += `"Số dịch vụ được đánh giá","${stats.serviceCount}"\n`;
+        csvContent += "\n";
+        
+        // Bảng điểm chi tiết (cho format cũ)
+        const oldFormatRatings = ratingsData.filter(r => r.serviceRating !== undefined);
+        if (oldFormatRatings.length > 0) {
+          csvContent += "ĐIỂM TRUNG BÌNH THEO TIÊU CHÍ (Format cũ)\n";
+          csvContent += "Tiêu chí đánh giá,Điểm trung bình,Xếp loại\n";
+          const serviceAvg = calculateAverage(oldFormatRatings, 'serviceRating');
+          const timeAvg = calculateAverage(oldFormatRatings, 'time');
+          const attitudeAvg = calculateAverage(oldFormatRatings, 'attitude');
+          const overallAvg = calculateAverage(oldFormatRatings, 'overall');
+          
+          csvContent += `"Chất lượng dịch vụ","${serviceAvg}/5","${getRatingCategory(serviceAvg)}"\n`;
+          csvContent += `"Thời gian xử lý","${timeAvg}/5","${getRatingCategory(timeAvg)}"\n`;
+          csvContent += `"Thái độ phục vụ","${attitudeAvg}/5","${getRatingCategory(attitudeAvg)}"\n`;
+          csvContent += `"Đánh giá tổng thể","${overallAvg}/5","${getRatingCategory(overallAvg)}"\n`;
+          csvContent += "\n";
+        }
+        
+        // Thống kê theo dịch vụ
+        csvContent += "THỐNG KÊ THEO LĨNH VỰC DỊCH VỤ\n";
+        csvContent += "Lĩnh vực dịch vụ,Số lượng đánh giá,Điểm trung bình,Tỷ lệ hài lòng,Xếp hạng\n";
+        
+        const serviceStats = stats.serviceBreakdown.sort((a, b) => b.average - a.average);
+        serviceStats.forEach((service, index) => {
+          csvContent += `"${service.name}","${service.count}","${service.average}/5","${service.satisfactionRate}%","${index + 1}"\n`;
+        });
+        csvContent += "\n";
+        
+        // Phân bố đánh giá chi tiết
+        csvContent += "PHÂN BỐ MỨC ĐỘ HÀI LÒNG\n";
+        csvContent += "Mức đánh giá,Mô tả,Số lượng,Tỷ lệ,Biểu đồ\n";
+        for (let i = 5; i >= 1; i--) {
+          const count = stats.ratingDistribution[i] || 0;
+          const percentage = ((count / ratingsData.length) * 100).toFixed(1);
+          const description = getSatisfactionDescription(i);
+          const chart = '█'.repeat(Math.round(percentage / 5)); // Simple chart
+          csvContent += `"${i} sao","${description}","${count}","${percentage}%","${chart}"\n`;
+        }
+        csvContent += "\n";
+        
+        // Xu hướng theo thời gian (theo ngày)
+        csvContent += "XU HƯỚNG ĐÁNH GIÁ THEO THỜI GIAN\n";
+        csvContent += "Ngày,Số lượng đánh giá,Điểm trung bình,Ghi chú\n";
+        const dailyStats = stats.dailyTrend;
+        Object.keys(dailyStats).sort().forEach(date => {
+          const dayStats = dailyStats[date];
+          const trend = dayStats.average >= 4 ? 'Tích cực' : dayStats.average >= 3 ? 'Trung bình' : 'Cần cải thiện';
+          csvContent += `"${date}","${dayStats.count}","${dayStats.average}/5","${trend}"\n`;
+        });
+        csvContent += "\n";
+        
+        // Chi tiết từng đánh giá
+        csvContent += "CHI TIẾT CÁC PHIẾU ĐÁNH GIÁ\n";
+        csvContent += "STT,Ngày giờ,Mã khách hàng,Lĩnh vực dịch vụ,Chất lượng DV,Thời gian XL,Thái độ PV,Tổng thể,Mức độ HÀI LÒNG,Ý kiến góp ý\n";
+        
+        ratingsData.forEach((rating, index) => {
+          const stt = index + 1;
+          const datetime = new Date(rating.timestamp).toLocaleString('vi-VN');
+          const customerCode = rating.customerCode || 'N/A';
+          const service = rating.service;
+          const serviceRating = rating.serviceRating || '-';
+          const timeRating = rating.time || '-';
+          const attitudeRating = rating.attitude || '-';
+          const overallRating = rating.overall || '-';
+          const satisfaction = getSatisfactionDescription(rating.overall);
+          const comment = (rating.comment || 'Không có ý kiến').replace(/,/g, ';').replace(/"/g, '""');
+          
+          csvContent += `"${stt}","${datetime}","${customerCode}","${service}","${serviceRating}","${timeRating}","${attitudeRating}","${overallRating}","${satisfaction}","${comment}"\n`;
+        });
+        
+        // Footer
+        csvContent += "\n";
+        csvContent += "THÔNG TIN BỔ SUNG\n";
+        csvContent += '"Ghi chú"\n';
+        csvContent += '"- Thang điểm đánh giá: 1 (Rất không hài lòng) đến 5 (Rất hài lòng)"\n';
+        csvContent += '"- Tỷ lệ hài lòng = Số đánh giá ≥4 sao / Tổng số đánh giá × 100%"\n';
+        csvContent += '"- DV: Dịch vụ, XL: Xử lý, PV: Phục vụ"\n';
+        csvContent += '"- Dữ liệu được tổng hợp tự động từ hệ thống"\n';
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `bao-cao-tong-hop-danh-gia-${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`✅ Đã xuất báo cáo khoa học với ${ratingsData.length} đánh giá thành công!\n📊 Bao gồm: Thống kê tổng quan, phân tích theo dịch vụ, xu hướng thời gian`);
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('❌ Lỗi khi xuất file. Vui lòng thử lại.');
+      }
+    }
+
+    // Hàm tính toán thống kê nâng cao
+    function calculateAdvancedStatistics(ratings) {
+      const totalRatings = ratings.reduce((sum, r) => sum + (r.overall || 0), 0);
+      const overallAverage = (totalRatings / ratings.length).toFixed(1);
+      const satisfiedCount = ratings.filter(r => (r.overall || 0) >= 4).length;
+      const satisfactionRate = ((satisfiedCount / ratings.length) * 100).toFixed(1);
+      
+      const allRatings = ratings.map(r => r.overall || 0);
+      const highestRating = Math.max(...allRatings);
+      const lowestRating = Math.min(...allRatings);
+      
+      // Thống kê theo dịch vụ
+      const serviceBreakdown = {};
+      ratings.forEach(rating => {
+        const service = rating.service;
+        if (!serviceBreakdown[service]) {
+          serviceBreakdown[service] = { count: 0, total: 0, satisfied: 0 };
+        }
+        serviceBreakdown[service].count++;
+        serviceBreakdown[service].total += rating.overall || 0;
+        if ((rating.overall || 0) >= 4) serviceBreakdown[service].satisfied++;
+      });
+      
+      const serviceStats = Object.keys(serviceBreakdown).map(service => {
+        const data = serviceBreakdown[service];
+        return {
+          name: service,
+          count: data.count,
+          average: (data.total / data.count).toFixed(1),
+          satisfactionRate: ((data.satisfied / data.count) * 100).toFixed(1)
+        };
+      });
+      
+      // Phân bố đánh giá
+      const ratingDistribution = {};
+      for (let i = 1; i <= 5; i++) {
+        ratingDistribution[i] = ratings.filter(r => (r.overall || 0) === i).length;
+      }
+      
+      // Xu hướng theo ngày
+      const dailyTrend = {};
+      ratings.forEach(rating => {
+        const date = new Date(rating.timestamp).toLocaleDateString('vi-VN');
+        if (!dailyTrend[date]) {
+          dailyTrend[date] = { count: 0, total: 0 };
+        }
+        dailyTrend[date].count++;
+        dailyTrend[date].total += rating.overall || 0;
+      });
+      
+      Object.keys(dailyTrend).forEach(date => {
+        const data = dailyTrend[date];
+        data.average = (data.total / data.count).toFixed(1);
+      });
+      
+      // Thời gian khảo sát
+      const timestamps = ratings.map(r => new Date(r.timestamp));
+      const earliestDate = new Date(Math.min(...timestamps)).toLocaleDateString('vi-VN');
+      const latestDate = new Date(Math.max(...timestamps)).toLocaleDateString('vi-VN');
+      const surveyPeriod = earliestDate === latestDate ? earliestDate : `${earliestDate} - ${latestDate}`;
+      
+      return {
+        overallAverage,
+        satisfactionRate,
+        highestRating,
+        lowestRating,
+        serviceCount: Object.keys(serviceBreakdown).length,
+        serviceBreakdown: serviceStats,
+        ratingDistribution,
+        dailyTrend,
+        surveyPeriod
+      };
+    }
+
+    // Tính trung bình cho một tiêu chí
+    function calculateAverage(ratings, field) {
+      const total = ratings.reduce((sum, r) => sum + (r[field] || 0), 0);
+      return (total / ratings.length).toFixed(1);
+    }
+
+    // Xếp loại điểm số
+    function getRatingCategory(score) {
+      const numScore = parseFloat(score);
+      if (numScore >= 4.5) return 'Xuất sắc';
+      if (numScore >= 4.0) return 'Tốt';
+      if (numScore >= 3.0) return 'Khá';
+      if (numScore >= 2.0) return 'Trung bình';
+      return 'Cần cải thiện';
+    }
+
+    // Mô tả mức độ hài lòng
+    function getSatisfactionDescription(score) {
+      if (score >= 5) return 'Rất hài lòng';
+      if (score >= 4) return 'Hài lòng';
+      if (score >= 3) return 'Bình thường';
+      if (score >= 2) return 'Không hài lòng';
+      return 'Rất không hài lòng';
+    }
+
+    // Event listeners
+    document.getElementById('sortOrder').addEventListener('change', updateTable);
+
+    // Load data when page loads
+    loadRatingsReport();
+  </script>
+</body>
+</html>

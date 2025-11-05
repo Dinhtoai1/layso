@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Màn hình gọi số</title></head>
+<body style="font-size: 60px; text-align: center; margin-top: 100px;">
+  <div id="popup-number">Đang chờ...</div>
+
+  <script>
+    window.addEventListener("message", (event) => {
+      const { number, service } = event.data;
+      document.getElementById("popup-number").innerText = `Số ${number}\n${service}`;
+    });
+  </script>
+</body>
+</html>

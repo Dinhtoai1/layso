@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tra cứu mã khách hàng</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 3vh;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      font-size: 3vh;
+      margin-bottom: 3vh;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .search-section {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2vh;
+      border-radius: 15px;
+      margin-bottom: 3vh;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 2vh;
+      margin-bottom: 1vh;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-input {
+      padding: 1.5vh 2vh;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1.8vh;
+      min-width: 200px;
+      font-weight: 600;
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #00ff88;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn {
+      padding: 1.5vh 3vh;
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.6vh;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+    }
+
+    .results-table {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      overflow: hidden;
+      overflow-x: auto;
+      margin-bottom: 2vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 1.5vh 2vh;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.2);
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .customer-code {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+      padding: 0.8vh 1.5vh;
+      border-radius: 8px;
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 1.6vh;
+      border: 2px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .service-badge {
+      padding: 0.5vh 1vh;
+      border-radius: 15px;
+      font-size: 1.3vh;
+      font-weight: 600;
+    }
+
+    .service-dat-dai { background: rgba(255, 107, 107, 0.3); color: #ff6b6b; }
+    .service-dkkd { background: rgba(74, 144, 226, 0.3); color: #4a90e2; }
+    .service-tc { background: rgba(255, 206, 84, 0.3); color: #ffce54; }
+    .service-xd { background: rgba(163, 190, 140, 0.3); color: #a3be8c; }
+
+    .no-data {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+      padding: 3vh;
+      font-style: italic;
+    }
+
+    .info-box {
+      background: rgba(0, 255, 136, 0.1);
+      border: 2px solid rgba(0, 255, 136, 0.3);
+      border-radius: 15px;
+      padding: 2vh;
+      margin-bottom: 3vh;
+      color: white;
+    }
+
+    .info-title {
+      font-weight: 700;
+      color: #00ff88;
+      margin-bottom: 1vh;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.5vh 1vh;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.2vh;
+      margin-left: 1vh;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .quick-date {
+      display: flex;
+      gap: 1vh;
+      margin-top: 1vh;
+    }
+
+    .date-btn {
+      padding: 1vh 1.5vh;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.3vh;
+    }
+
+    .date-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .date-btn.active {
+      background: rgba(0, 255, 136, 0.3);
+      border-color: #00ff88;
+      color: #00ff88;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Tra cứu mã khách hàng</h1>
+    
+    <div class="info-box">
+      <div class="info-title">📋 Hướng dẫn sử dụng:</div>
+      <p>• Mã khách hàng = Ngày (DDMMYY) + Số thứ tự</p>
+      <p>• Ví dụ: Ngày 08/08/2025, số 1001 → Mã: <strong>080825-1001</strong></p>
+      <p>• Click vào mã để copy, sau đó dán vào form đánh giá</p>
+    </div>
+
+    <div class="search-section">
+      <div class="search-row">
+        <input type="date" class="search-input" id="dateFilter" value="">
+        <input type="text" class="search-input" id="numberFilter" placeholder="Tìm theo số (1001, 2001...)">
+        <select class="search-input" id="serviceFilter">
+          <option value="">Tất cả dịch vụ</option>
+          <option value="Đất đai">Đất đai</option>
+          <option value="Đăng ký kinh doanh">Đăng ký kinh doanh</option>
+          <option value="Tài chính Kế hoạch">Tài chính Kế hoạch</option>
+          <option value="Xây dựng và Công thương">Xây dựng và Công thương</option>
+        </select>
+        <button class="btn" onclick="searchHistory()">🔍 Tìm kiếm</button>
+      </div>
+      <div class="quick-date">
+        <button class="date-btn" onclick="setDate('today')">Hôm nay</button>
+        <button class="date-btn" onclick="setDate('yesterday')">Hôm qua</button>
+        <button class="date-btn" onclick="setDate('week')">7 ngày qua</button>
+      </div>
+    </div>
+
+    <div class="results-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã khách hàng</th>
+            <th>Dịch vụ</th>
+            <th>Số thứ tự</th>
+            <th>Thời gian gọi</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr>
+            <td colspan="5" class="no-data">Nhập thông tin tìm kiếm và nhấn "Tìm kiếm"</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 2vh;">
+      <button class="btn" onclick="window.open('/staff-rating.html', '_blank')">
+        📝 Mở form đánh giá
+      </button>
+      <button class="btn" onclick="window.open('/ratings-detail.html', '_blank')">
+        📊 Xem kết quả đánh giá
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let allHistory = [];
+
+    // Set today's date as default
+    document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+
+    // Generate customer code from date and number
+    function generateCustomerCode(dateString, number) {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${day}${month}${year}-${number}`;
+    }
+
+    // Get service badge class
+    function getServiceClass(service) {
+      const serviceMap = {
+        'Đất đai': 'service-dat-dai',
+        'Đăng ký kinh doanh': 'service-dkkd', 
+        'Tài chính Kế hoạch': 'service-tc',
+        'Xây dựng và Công thương': 'service-xd'
+      };
+      return serviceMap[service] || 'service-other';
+    }
+
+    // Copy customer code to clipboard
+    function copyCustomerCode(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        alert(`Đã copy mã khách hàng: ${code}`);
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert(`Đã copy mã khách hàng: ${code}`);
+      });
+    }
+
+    // Set date filters
+    function setDate(type) {
+      const today = new Date();
+      const dateFilter = document.getElementById('dateFilter');
+      
+      // Remove active class from all date buttons
+      document.querySelectorAll('.date-btn').forEach(btn => btn.classList.remove('active'));
+      
+      switch(type) {
+        case 'today':
+          dateFilter.value = today.toISOString().split('T')[0];
+          event.target.classList.add('active');
+          break;
+        case 'yesterday':
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          dateFilter.value = yesterday.toISOString().split('T')[0];
+          event.target.classList.add('active');
+          break;
+        case 'week':
+          dateFilter.value = ''; // Show all for week view
+          event.target.classList.add('active');
+          break;
+      }
+      
+      searchHistory();
+    }
+
+    // Search history
+    async function searchHistory() {
+      try {
+        // Load history data if not already loaded
+        if (allHistory.length === 0) {
+          const response = await fetch('https://layso.onrender.com/api/history');
+          if (!response.ok) {
+            throw new Error('Không thể tải dữ liệu lịch sử');
+          }
+          allHistory = await response.json();
+        }
+
+        const dateFilter = document.getElementById('dateFilter').value;
+        const numberFilter = document.getElementById('numberFilter').value.trim();
+        const serviceFilter = document.getElementById('serviceFilter').value;
+
+        let filtered = allHistory.filter(entry => {
+          // Date filter
+          if (dateFilter) {
+            const entryDate = new Date(entry.time).toISOString().split('T')[0];
+            if (entryDate !== dateFilter) {
+              return false;
+            }
+          } else {
+            // If no date filter, show last 7 days
+            const entryDate = new Date(entry.time);
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            if (entryDate < weekAgo) {
+              return false;
+            }
+          }
+
+          // Number filter
+          if (numberFilter && !String(entry.number).includes(numberFilter)) {
+            return false;
+          }
+
+          // Service filter
+          if (serviceFilter && entry.service !== serviceFilter) {
+            return false;
+          }
+
+          return true;
+        });
+
+        // Sort by time (newest first)
+        filtered.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+        displayResults(filtered);
+
+      } catch (error) {
+        console.error('Search error:', error);
+        document.getElementById('resultsBody').innerHTML = 
+          '<tr><td colspan="5" class="no-data">Lỗi khi tải dữ liệu</td></tr>';
+      }
+    }
+
+    // Display search results
+    function displayResults(results) {
+      const tbody = document.getElementById('resultsBody');
+      
+      if (results.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="no-data">Không tìm thấy kết quả phù hợp</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = results.map(entry => {
+        const customerCode = generateCustomerCode(entry.time, entry.number);
+        const serviceClass = getServiceClass(entry.service);
+        const callTime = new Date(entry.time).toLocaleString('vi-VN');
+        
+        return `
+          <tr>
+            <td>
+              <span class="customer-code" onclick="copyCustomerCode('${customerCode}')" 
+                    title="Click để copy">
+                ${customerCode}
+              </span>
+            </td>
+            <td>
+              <span class="service-badge ${serviceClass}">
+                ${entry.service}
+              </span>
+            </td>
+            <td style="font-weight: 600; font-size: 1.6vh;">
+              ${entry.number}
+            </td>
+            <td>${callTime}</td>
+            <td>
+              <button class="copy-btn" onclick="copyCustomerCode('${customerCode}')">
+                📋 Copy
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Add event listeners
+    document.getElementById('numberFilter').addEventListener('input', () => {
+      if (allHistory.length > 0) searchHistory();
+    });
+
+    document.getElementById('serviceFilter').addEventListener('change', () => {
+      if (allHistory.length > 0) searchHistory();
+    });
+
+    document.getElementById('dateFilter').addEventListener('change', () => {
+      if (allHistory.length > 0) searchHistory();
+    });
+
+    // Auto-search on page load with today's data
+    window.addEventListener('load', () => {
+      setDate('today');
+    });
+  </script>
+</body>
+</html>

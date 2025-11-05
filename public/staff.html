@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhân viên - Quản lý thủ tục</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background: #f5f5f5;
+    }
+    .header {
+      background: linear-gradient(135deg, #1976d2, #1565c0);
+      color: white;
+      padding: 15px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .user-info h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .user-info .service-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-top: 4px;
+      display: inline-block;
+      width: fit-content;
+    }
+    .logout-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logout-btn:hover {
+      background: #d32f2f;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #main { display: none; }
+    #next-result { margin-top: 20px; font-size: 18px; color: green; }
+    table { 
+      margin-top: 30px; 
+      border-collapse: collapse; 
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    th, td { border: 1px solid #e0e0e0; padding: 12px 16px; }
+    th { 
+      background: #f8f9fa; 
+      font-weight: 600;
+      color: #333;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    tr:hover {
+      background: #f0f8ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="user-info">
+      <h2 id="welcome">👤 Nhân viên</h2>
+      <div class="service-badge" id="serviceBadge">Đang tải...</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      🚪 Đăng xuất
+    </button>
+  </div>
+  
+  <div class="container">
+    <div id="main">
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <button id="call-btn" onclick="callNext()" style="flex: 2; padding: 12px 20px; background: #1976d2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+        📞 Gọi khách tiếp theo
+      </button>
+      <button onclick="recallLast()" style="flex: 1; padding: 12px 20px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+        🔄 Gọi lại
+      </button>
+    </div>
+    <div id="next-result"></div>
+
+    <!-- 1. Thống kê hàng đợi -->
+    <div style="margin: 30px 0; padding: 20px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
+      <h3 style="color: #2e7d32; margin-top: 0;">📊 Thống kê hàng đợi</h3>
+      <table style="margin-top: 15px;">
+        <thead>
+          <tr>
+            <th>Lĩnh vực</th>
+            <th>Đang chờ</th>
+            <th>Số đã gọi gần nhất</th>
+          </tr>
+        </thead>
+        <tbody id="stats-body"></tbody>
+      </table>
+    </div>
+
+    <!-- 2. Hiển thị số thứ tự -->
+    <div style="margin: 30px 0; padding: 20px; background: #fff3e0; border-radius: 8px; border: 2px solid #ff9800;">
+      <h3 style="color: #ff9800; margin-top: 0;">📺 Hiển thị số thứ tự</h3>
+      <p>Mở màn hình hiển thị số thứ tự cho khách hàng xem:</p>
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button onclick="openNumberDisplay()" style="flex: 1; padding: 12px 20px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+          📺 Mở màn hình hiển thị
+        </button>
+        <button onclick="openAllCountersDisplay()" style="flex: 1; padding: 12px 20px; background: #673ab7; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+          🏢 Tất cả quầy
+        </button>
+      </div>
+      <p style="font-size: 12px; color: #666; margin-bottom: 0;">Màn hình sẽ hiển thị số vừa gọi và danh sách các số gần đây</p>
+    </div>
+
+    <!-- 3. Đánh giá mức độ hài lòng -->
+    <div style="margin: 30px 0; padding: 20px; background: #f0f8ff; border-radius: 8px; border: 2px solid #1976d2;">
+      <h3 style="color: #1976d2; margin-top: 0;">📋 Đánh giá mức độ hài lòng</h3>
+      
+      <!-- Thống kê đánh giá nhanh -->
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+        <div style="text-align: center; padding: 15px; background: #e8f5e8; border-radius: 6px; border: 1px solid #4caf50;">
+          <div style="font-size: 24px; color: #4caf50;">😊</div>
+          <div style="font-size: 12px; color: #666;">Rất hài lòng</div>
+          <div id="rating-5" style="font-weight: bold; color: #4caf50;">0</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #f0f8ff; border-radius: 6px; border: 1px solid #2196f3;">
+          <div style="font-size: 24px; color: #2196f3;">🙂</div>
+          <div style="font-size: 12px; color: #666;">Hài lòng</div>
+          <div id="rating-4" style="font-weight: bold; color: #2196f3;">0</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #fff8e1; border-radius: 6px; border: 1px solid #ff9800;">
+          <div style="font-size: 24px; color: #ff9800;">😐</div>
+          <div style="font-size: 12px; color: #666;">Bình thường</div>
+          <div id="rating-3" style="font-weight: bold; color: #ff9800;">0</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #fce4ec; border-radius: 6px; border: 1px solid #e91e63;">
+          <div style="font-size: 24px; color: #e91e63;">🙁</div>
+          <div style="font-size: 12px; color: #666;">Không hài lòng</div>
+          <div id="rating-2" style="font-weight: bold; color: #e91e63;">0</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #ffebee; border-radius: 6px; border: 1px solid #f44336;">
+          <div style="font-size: 24px; color: #f44336;">😞</div>
+          <div style="font-size: 12px; color: #666;">Rất không hài lòng</div>
+          <div id="rating-1" style="font-weight: bold; color: #f44336;">0</div>
+        </div>
+      </div>
+
+      <!-- Tổng kết đánh giá -->
+      <div style="display: flex; justify-content: space-between; margin-bottom: 20px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #ddd;">
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: bold; color: #1976d2;" id="total-ratings">0</div>
+          <div style="font-size: 12px; color: #666;">Tổng đánh giá</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: bold; color: #4caf50;" id="avg-rating">0.0</div>
+          <div style="font-size: 12px; color: #666;">Điểm trung bình</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: bold; color: #ff9800;" id="satisfaction-rate">0%</div>
+          <div style="font-size: 12px; color: #666;">Tỷ lệ hài lòng</div>
+        </div>
+      </div>
+
+      <!-- Các nút thao tác -->
+      <p style="margin-bottom: 10px; font-weight: 500;">Thu thập đánh giá từ khách hàng:</p>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button onclick="openRatingPage()" style="flex: 1; padding: 12px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+          📋 Mở trang đánh giá
+        </button>
+        <button onclick="refreshRatingStats()" style="padding: 12px 16px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+          🔄 Cập nhật
+        </button>
+      </div>
+      
+      <!-- Đánh giá nhanh -->
+      <div style="border-top: 1px solid #ddd; padding-top: 15px;">
+        <p style="margin-bottom: 10px; font-weight: 500; font-size: 14px;">Đánh giá nhanh cho khách hiện tại:</p>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="quickRating(5)" style="padding: 8px 12px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">😊 5</button>
+          <button onclick="quickRating(4)" style="padding: 8px 12px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">🙂 4</button>
+          <button onclick="quickRating(3)" style="padding: 8px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">😐 3</button>
+          <button onclick="quickRating(2)" style="padding: 8px 12px; background: #e91e63; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">🙁 2</button>
+          <button onclick="quickRating(1)" style="padding: 8px 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">😞 1</button>
+        </div>
+      </div>
+      
+      <p style="font-size: 12px; color: #666; margin-top: 10px; margin-bottom: 0;">
+        Trang đánh giá sẽ tự động áp dụng cho lĩnh vực "<span id="serviceInLink"></span>"
+      </p>
+    </div>
+  </div>
+</div>
+
+  <script>
+    // Mapping lĩnh vực sang số quầy
+    const serviceToCounter = {
+      "Chứng thực Hộ tịch": "1",
+      "Văn thư": "2",
+      "Nội vụ - GDĐT - Văn hóa - Khoa học và Thông tin - Y tế - Lao động - Bảo trợ Xã hội": "3",
+      "Nông nghiệp Môi trường - Tài chính kế hoạch - Xây dựng và Công thương": "4"
+    };
+
+    // Hàm phát âm thanh đơn giản như tiếng gõ cửa
+    function playKnockSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Tạo 3 tiếng "gõ" liên tiếp
+        const times = [0, 0.15, 0.3];
+        
+        times.forEach(startTime => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          // Tần số thấp giống tiếng gõ cửa
+          oscillator.frequency.setValueAtTime(150, audioContext.currentTime + startTime);
+          oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + startTime + 0.1);
+          
+          // Âm lượng nhanh lên rồi nhanh xuống
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.02);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + 0.1);
+          
+          oscillator.start(audioContext.currentTime + startTime);
+          oscillator.stop(audioContext.currentTime + startTime + 0.1);
+        });
+      } catch (error) {
+        console.log('Không thể phát âm thanh:', error);
+      }
+    }
+
+    // Kiểm tra đăng nhập
+    let service = localStorage.getItem('service');
+    let userType = localStorage.getItem('userType');
+    let username = localStorage.getItem('username');
+    
+    console.log('🔍 Debug localStorage data:');
+    console.log('   service:', service);
+    console.log('   userType:', userType);
+    console.log('   username:', username);
+    console.log('🔍 Debug serviceToCounter mapping:', serviceToCounter);
+    
+    if (!service || service === 'null' || service === 'undefined') {
+      console.log('❌ Không có service hợp lệ trong localStorage, chuyển đến login');
+      alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      localStorage.clear();
+      window.location = 'login.html';
+    } else {
+      document.getElementById('main').style.display = 'block';
+      document.getElementById('welcome').innerText = `Nhân viên lĩnh vực ${service}`;
+      document.getElementById('serviceBadge').innerText = `Quầy ${serviceToCounter[service] || "1"} - ${service}`;
+      document.getElementById('call-btn').innerText = `Gọi tiếp lĩnh vực "${service}"`;
+      
+      // Hiển thị tên lĩnh vực trong phần đánh giá
+      document.getElementById('serviceInLink').textContent = service;
+      
+      loadStats();
+      setInterval(loadStats, 5000);
+      
+      // Khởi tạo thống kê đánh giá
+      initRatingStats();
+    }
+
+    function callNext() {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+      
+      fetch(`${apiBaseUrl}/call-next`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service })
+      })
+      .then(res => {
+        console.log('Call Next Response Status:', res.status);
+        if (!res.ok) {
+          console.log('Call Next Error - No customers waiting');
+          throw new Error('Không còn khách chờ');
+        }
+        return res.json();
+      })
+      .then(async (data) => {
+        console.log('Call Next Success Data:', data);
+        
+        // Lấy số quầy tương ứng
+        const counterNumber = serviceToCounter[service] || "1";
+        
+        // Không phát âm thanh ở màn hình staff
+        // announceNumber(data.number, counterNumber);
+        
+        const waitingText = data.waitingCount !== undefined && data.waitingCount > 0 ? 
+          ` (Còn ${data.waitingCount} khách chờ)` : ' (Không còn khách chờ)';
+        const message = `✅ Đã gọi số ${data.number} cho "${service}".${waitingText}`;
+        document.getElementById('next-result').innerText = message;
+        
+        // Gửi thông báo đến popup hiển thị (nếu đang mở)
+        if (window.displayWindow && !window.displayWindow.closed) {
+          window.displayWindow.postMessage({
+            type: 'NEW_CALL',
+            number: data.number,
+            service: service
+          }, '*');
+        }
+        
+        loadStats();
+      })
+      .catch((error) => {
+        console.log('Call next error:', error);
+        console.log('Service:', service);
+        
+        if (error.message === 'Không còn khách chờ') {
+          document.getElementById('next-result').innerText =
+            `⚠️ Hiện tại không có khách nào đang chờ cho lĩnh vực "${service}". Khách hàng cần lấy số từ trang chủ trước.`;
+        } else {
+          document.getElementById('next-result').innerText =
+            `❌ Lỗi: ${error.message || 'Không thể gọi số'}`;
+        }
+        loadStats();
+      });
+    }
+
+    function recallLast() {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+      console.log('🔄 Thực hiện recall-last cho service:', service, 'API:', apiBaseUrl);
+      fetch(`${apiBaseUrl}/recall-last`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service, serviceName: service })
+        })
+        .then(res => {
+          console.log('Recall response status:', res.status);
+          if (!res.ok) throw new Error('Không thể gọi lại');
+          return res.json();
+        })
+        .then((data) => {
+          console.log('Recall success data:', data);
+          const counterNumber = serviceToCounter[service] || "1";
+          const message = `🔁 Đã gọi lại số ${data.number} cho lĩnh vực "${service}".`;
+          document.getElementById('next-result').innerText = message;
+          if (window.displayWindow && !window.displayWindow.closed) {
+            window.displayWindow.postMessage({
+              type: 'NEW_CALL',
+              number: data.number,
+              service: service,
+              isRecall: true
+            }, '*');
+          }
+          loadStats();
+        })
+        .catch((error) => {
+          console.error('Error in recallLast:', error);
+          document.getElementById('next-result').innerText = 
+            `Không thể gọi lại số ở lĩnh vực "${service}". (${error.message})`;
+          loadStats();
+        });
+    }
+
+    // Định nghĩa hàm announceNumber noop để tránh lỗi nếu code cũ vẫn gọi
+    if (typeof announceNumber === 'undefined') {
+      function announceNumber() {
+        // no-op on staff screen
+      }
+    }
+
+    function openRatingPage() {
+      const params = new URLSearchParams({ service: service });
+      window.open(`staff-rating.html?${params.toString()}`, 'ratingPage', 'width=1000,height=800,scrollbars=yes,resizable=yes');
+    }
+
+    function openNumberDisplay() {
+      window.displayWindow = window.open('number-display.html', 'numberDisplay', 'width=1200,height=900,scrollbars=yes,resizable=yes');
+    }
+
+    function openAllCountersDisplay() {
+      window.displayWindow = window.open('all-counters-display.html', 'allCountersDisplay', 'width=1600,height=1000,scrollbars=yes,resizable=yes');
+    }
+
+    function loadStats() {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 
+        'http://localhost:3000' : 'https://layso.onrender.com';
+        
+      fetch(`${apiBaseUrl}/stats`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('stats-body');
+          tbody.innerHTML = '';
+          
+          // Chỉ lặp qua serviceStats, không lặp qua toàn bộ data
+          for (let service in data.serviceStats) {
+            const stats = data.serviceStats[service];
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = service;
+            row.insertCell(1).innerText = stats.waiting || 0; // Số khách chờ
+            row.insertCell(2).innerText = stats.lastCalled || 'Chưa có'; // Số cuối đã gọi
+          }
+        });
+    }
+
+    function logout() {
+      if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+        localStorage.removeItem('service');
+        window.location = 'login.html';
+      }
+    }
+
+    // Tạo số test để kiểm tra workflow
+    // Các hàm hỗ trợ đánh giá
+    function quickRating(rating) {
+      if (confirm(`Xác nhận đánh giá ${rating} sao cho khách hàng vừa phục vụ?`)) {
+        // Gửi đánh giá nhanh đến server
+  fetch('https://layso.onrender.com/quick-rating', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            service: service, 
+            rating: rating 
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Cập nhật hiển thị
+            refreshRatingStats();
+            // Hiển thị thông báo
+            alert(`Đã ghi nhận đánh giá ${rating} sao. Cảm ơn!`);
+          } else {
+            throw new Error(data.error || 'Lỗi không xác định');
+          }
+        })
+        .catch(error => {
+          console.error('Lỗi khi gửi đánh giá:', error);
+          alert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+        });
+      }
+    }
+
+    function refreshRatingStats() {
+      // Lấy thống kê từ server
+  fetch(`https://layso.onrender.com/ratings-stats/${encodeURIComponent(service)}`)
+        .then(res => res.json())
+        .then(stats => {
+          // Cập nhật hiển thị số lượng theo từng mức đánh giá
+          for (let i = 1; i <= 5; i++) {
+            const element = document.getElementById(`rating-${i}`);
+            if (element) element.textContent = stats.ratingCounts[i] || 0;
+          }
+          
+          // Cập nhật tổng kết
+          const totalElement = document.getElementById('total-ratings');
+          const avgElement = document.getElementById('avg-rating');
+          const satisfactionElement = document.getElementById('satisfaction-rate');
+          
+          if (totalElement) totalElement.textContent = stats.totalRatings;
+          if (avgElement) avgElement.textContent = stats.averageRating.toFixed(1);
+          if (satisfactionElement) satisfactionElement.textContent = `${stats.satisfactionRate}%`;
+        })
+        .catch(error => {
+          console.error('Lỗi khi tải thống kê đánh giá:', error);
+        });
+    }
+
+    // Khởi tạo dữ liệu đánh giá khi trang load
+    function initRatingStats() {
+      refreshRatingStats();
+    }
+  </script>
+</body>
+</html>

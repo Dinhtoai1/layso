@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đánh giá mức độ hài lòng</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      max-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2vh;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .container { 
+      width: 100%;
+      max-width: 140vh;
+      height: 85vh;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+    
+    .header {
+      text-align: center;
+      padding: 3vh 4vh 2vh;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .logo-box {
+      margin-bottom: 1vh;
+    }
+    .logo-line1 {
+      font-size: 5vh; /* theo yêu cầu */
+      font-weight: 800;
+      color: #ffeb3b; /* vàng */
+      letter-spacing: 1px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      line-height: 1.1;
+    }
+    .logo-line2 {
+      font-size: 4vh; /* tăng lên 4vh */
+      font-weight: 700;
+      color: #ffeb3b; /* vàng */
+      letter-spacing: .5px;
+      text-shadow: 0 3px 10px rgba(0,0,0,0.5);
+      line-height: 1.15;
+    }
+    
+    h2 {
+      color: white;
+      font-size: 3vh;
+      font-weight: 600;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      margin-bottom: 1vh;
+    }
+    
+    .service-info {
+      background: rgba(0, 255, 136, 0.15);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      padding: 1.5vh 3vh;
+      border-radius: 12px;
+      color: white;
+      font-size: 2vh;
+      font-weight: 500;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 3vh 4vh;
+      overflow-y: auto;
+    }
+    
+    .rating-section {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 3vh;
+      margin-bottom: 2vh;
+      text-align: center;
+    }
+    
+    .rating-label {
+      font-size: 2.8vh;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 2vh;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    
+    .rating-options {
+      display: flex;
+      justify-content: center;
+      gap: 2vh;
+      flex-wrap: wrap;
+    }
+    
+    .rating-btn {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 1.5vh 3vh;
+      border-radius: 12px;
+      font-size: 1.8vh;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      min-width: 15vh;
+    }
+    
+    .rating-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      background: rgba(255, 255, 255, 0.25);
+    }
+    
+    .rating-btn.selected {
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      border-color: #00ff88;
+      color: #000;
+      font-weight: 700;
+      text-shadow: none;
+      box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+    }
+    
+    .comment-section {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 3vh;
+      margin-bottom: 2vh;
+    }
+    
+    .comment-label {
+      font-size: 2.2vh;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 1.5vh;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    
+    textarea {
+      width: 100%;
+      height: 12vh;
+      padding: 2vh;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      font-size: 1.8vh;
+      font-family: inherit;
+      resize: none;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      backdrop-filter: blur(10px);
+    }
+    
+    textarea:focus {
+      border-color: #00ff88;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.2);
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 2vh;
+      justify-content: center;
+      margin-top: auto;
+      padding-top: 2vh;
+    }
+    
+    .btn {
+      padding: 2vh 4vh;
+      font-size: 2vh;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 20vh;
+      backdrop-filter: blur(10px);
+    }
+    
+    .submit-btn {
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #000;
+      box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+    }
+    
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+    }
+    
+    .submit-btn:disabled {
+      background: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.5);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .reset-btn {
+      background: rgba(255, 152, 0, 0.8);
+      color: white;
+      box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
+    }
+    
+    .reset-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+      background: rgba(255, 152, 0, 0.9);
+    }
+    
+    .success-message {
+      display: none;
+      text-align: center;
+      padding: 4vh;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      border-radius: 15px;
+      margin: 2vh 0;
+      font-size: 2.2vh;
+      font-weight: 600;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+    }
+    
+    .login-required {
+      text-align: center;
+      padding: 6vh 4vh;
+      color: white;
+    }
+    
+    .login-required h3 {
+      color: #ff6b6b;
+      margin-bottom: 2vh;
+      font-size: 3vh;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    
+    .login-required button {
+      background: linear-gradient(135deg, #1976d2, #1565c0);
+      color: white;
+      padding: 2vh 4vh;
+      border: none;
+      border-radius: 12px;
+      font-size: 2vh;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .login-required button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(25, 118, 210, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        width: 98%;
+        height: 95vh;
+        margin: 1vh;
+      }
+      
+      .rating-options {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .rating-btn {
+        width: 80%;
+        min-width: auto;
+      }
+      
+      .buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .btn {
+        width: 80%;
+        min-width: auto;
+      }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+      100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+    }
+
+    /* ĐỔI MẬT KHẨU */
+    #changePasswordBox {
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 24px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #eee;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    
+    #changePasswordBox h3 {
+      color: #333;
+      margin-bottom: 16px;
+      font-size: 2.4vh;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    #changePasswordBox .form-control {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      font-size: 1.8vh;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.8);
+      color: #333;
+      transition: border-color 0.3s ease;
+    }
+    
+    #changePasswordBox .form-control:focus {
+      border-color: #00ff88;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.2);
+    }
+    
+    #changePasswordBox .btn-primary {
+      width: 100%;
+      padding: 12px;
+      font-size: 2vh;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #000;
+      box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+    }
+    
+    #changePasswordBox .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+    }
+    
+    #changePasswordBox #cp-message {
+      margin-top: 10px;
+      color: red;
+      font-size: 1.6vh;
+      text-align: center;
+    }
+    /* END ĐỔI MẬT KHẨU */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Trang yêu cầu đăng nhập -->
+    <div id="loginRequired" class="login-required">
+      <h3>Vui lòng đăng nhập để sử dụng trang đánh giá</h3>
+      <p>Trang này dành cho nhân viên để thu thập đánh giá từ khách hàng</p>
+      <button onclick="window.location.href='login.html'">Đăng nhập</button>
+    </div>
+
+    <!-- Trang đánh giá chính -->
+    <div id="ratingMain" style="display: none;">
+      <div class="header">
+        <div class="logo-box">
+          <div class="logo-box">
+            <div class="logo-line1">TRUNG TÂM PHỤC VỤ HÀNH CHÍNH CÔNG</div>
+            <div class="logo-line2">XÃ TRI LỄ, TỈNH LẠNG SƠN</div>
+          </div>
+        </div>
+        <h2>Đánh giá mức độ hài lòng</h2>
+        <div class="service-info">
+          <span>Lĩnh vực: </span><span id="serviceDisplay">Đang tải...</span>
+        </div>
+        <div style="margin-top:8px;">
+          <span style="color: #fff; font-weight:600">Đang gọi: </span>
+          <span id="currentCallDisplay" style="color: #00ff88; font-weight:700;">Chưa có khách đang gọi</span>
+        </div>
+      </div>
+      
+      <div class="content">
+        <form id="ratingForm">
+          <input type="hidden" id="serviceInput" required>
+          <input type="hidden" id="customerCode" value="">
+
+          <div class="rating-section">
+            <div class="rating-label" id="ratingLabel">Xin mời quý khách đánh giá mức độ hài lòng khi thực hiện TTHC!</div>
+            <div class="rating-options">
+              <button type="button" class="rating-btn" data-value="5">😊 Rất hài lòng</button>
+              <button type="button" class="rating-btn" data-value="4">🙂 Hài lòng</button>
+              <button type="button" class="rating-btn" data-value="3">😐 Bình thường</button>
+              <button type="button" class="rating-btn" data-value="2">🙁 Không hài lòng</button>
+              <button type="button" class="rating-btn" data-value="1">😞 Rất không hài lòng</button>
+            </div>
+          </div>
+
+          <div class="comment-section">
+            <div class="comment-label">Ý kiến góp ý của khách hàng (không bắt buộc)</div>
+            <textarea id="comment" placeholder="Ghi lại ý kiến góp ý của khách hàng (nếu có)..."></textarea>
+          </div>
+
+          <div class="buttons">
+            <button type="button" class="btn reset-btn" onclick="resetForm()">Đặt lại</button>
+            <button type="submit" class="btn submit-btn" id="submitBtn" disabled>Gửi đánh giá</button>
+          </div>
+        </form>
+
+        <div class="success-message" id="successMessage">
+          <h3>🎉 Cảm ơn!</h3>
+          <p>Đánh giá đã được ghi nhận thành công. Cảm ơn khách hàng đã sử dụng dịch vụ.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ĐỔI MẬT KHẨU -->
+    <div id="changePasswordBox" style="display: none;">
+      <h3>Đổi mật khẩu</h3>
+      <input id="cp-username" type="text" placeholder="Tên đăng nhập" class="form-control">
+      <input id="cp-old" type="password" placeholder="Mật khẩu cũ" class="form-control">
+      <input id="cp-new" type="password" placeholder="Mật khẩu mới" class="form-control">
+      <button onclick="changePassword()" class="btn btn-primary">Đổi mật khẩu</button>
+      <div id="cp-message"></div>
+    </div>
+    <!-- END ĐỔI MẬT KHẨU -->
+  </div>
+
+  <script>
+    let selectedRating = 0;
+  let currentCall = null; // { formatted, raw }
+  let isCallActive = false;
+  let alreadyRated = false;
+
+    // Kiểm tra đăng nhập và khởi tạo trang
+    function initializePage() {
+      console.log('🚀 Khởi tạo trang đánh giá...');
+      
+      // Lấy service từ URL parameters trước
+      const urlParams = new URLSearchParams(window.location.search);
+      let service = urlParams.get('service');
+      
+      console.log('📋 Service từ URL:', service);
+      
+      // Nếu không có trong URL, thử lấy từ localStorage
+      if (!service) {
+        service = localStorage.getItem('service');
+        console.log('📋 Service từ localStorage:', service);
+      }
+      
+      if (!service) {
+        console.log('❌ Không có service, hiển thị trang đăng nhập');
+        document.getElementById('loginRequired').style.display = 'block';
+        document.getElementById('ratingMain').style.display = 'none';
+        return;
+      }
+
+      console.log('✅ Có service, hiển thị trang đánh giá');
+      document.getElementById('loginRequired').style.display = 'none';
+      document.getElementById('ratingMain').style.display = 'block';
+      
+      // Hiển thị thông tin lĩnh vực
+      document.getElementById('serviceDisplay').textContent = service;
+      document.getElementById('serviceInput').value = service;
+      
+      checkSubmitButton();
+    }
+
+    // Xử lý click vào nút đánh giá
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📄 DOM loaded, thiết lập event listeners...');
+      
+      const ratingBtns = document.querySelectorAll('.rating-btn');
+      console.log('🔘 Tìm thấy', ratingBtns.length, 'nút đánh giá');
+      
+      ratingBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          console.log('👆 Clicked rating button:', this.textContent);
+          
+          // Bỏ selected khỏi tất cả nút
+          ratingBtns.forEach(b => b.classList.remove('selected'));
+          
+          // Thêm selected cho nút được chọn
+          this.classList.add('selected');
+          
+          // Lưu giá trị đánh giá
+          selectedRating = parseInt(this.getAttribute('data-value'));
+          console.log('⭐ Selected rating:', selectedRating);
+          
+          // Kiểm tra nút submit
+          checkSubmitButton();
+        });
+      });
+      
+      // Khởi tạo trang
+      initializePage();
+
+        // Bắt đầu poll latest-calls để đồng bộ realtime
+        setInterval(pollLatestCalls, 1500);
+    });
+
+    function checkSubmitButton() {
+      const serviceSelected = document.getElementById('serviceInput').value !== '';
+      const ratingSelected = selectedRating > 0;
+      // Chỉ cho phép gửi khi có service, đã chọn rating, đang có cuộc gọi (isCallActive)
+      // và khách chưa được đánh giá (alreadyRated === false)
+      const canSubmit = serviceSelected && ratingSelected && isCallActive && !alreadyRated;
+      
+      console.log('🔍 Kiểm tra submit button:', {
+        serviceSelected,
+        ratingSelected,
+        canSubmit
+      });
+      
+      document.getElementById('submitBtn').disabled = !canSubmit;
+    }
+
+    function resetForm() {
+      console.log('🔄 Reset form');
+      
+      // Reset rating selection
+      selectedRating = 0;
+      document.querySelectorAll('.rating-btn').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      
+      // Reset comment
+      document.getElementById('comment').value = '';
+      
+      // Reset button
+      checkSubmitButton();
+      
+      // Hide success message
+      document.getElementById('successMessage').style.display = 'none';
+      document.getElementById('ratingForm').style.display = 'block';
+    }
+
+    // Xử lý form submit
+    document.getElementById('ratingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const service = document.getElementById('serviceInput').value;
+      const comment = document.getElementById('comment').value.trim();
+      
+      console.log('📤 Gửi đánh giá:', {
+        service,
+        rating: selectedRating,
+        comment
+      });
+      
+      if (!service || selectedRating === 0) {
+        alert('Vui lòng chọn mức độ hài lòng');
+        return;
+      }
+      
+      const customerCode = document.getElementById('customerCode').value.trim();
+      
+      const ratingData = {
+        service: service,
+        overall: selectedRating,
+        comment: comment,
+        customerCode: customerCode,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        // Gửi tới endpoint nội bộ để lưu đánh giá
+        const response = await fetch('/submit-rating', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(ratingData)
+        });
+
+        if (response.ok) {
+          console.log('✅ Gửi đánh giá thành công');
+          document.getElementById('ratingForm').style.display = 'none';
+          document.getElementById('successMessage').style.display = 'block';
+          
+          // Tự động reset form sau 3 giây
+          setTimeout(() => {
+            resetForm();
+          }, 3000);
+        } else {
+          console.error('❌ Lỗi response:', response.status);
+          alert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+        }
+      } catch (error) {
+        console.error('❌ Lỗi gửi đánh giá:', error);
+        alert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+      }
+    });
+
+    // Poll server /latest-calls để cập nhật số đang gọi cho dịch vụ tương ứng
+    async function pollLatestCalls() {
+      try {
+        const service = document.getElementById('serviceInput').value;
+        if (!service) return; // chưa xác định service
+
+        const res = await fetch('/latest-calls');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // latest-calls trả về object keyed by service name
+        const entry = data[service];
+
+        if (entry && entry.number) {
+          // Có cuộc gọi đang active cho dịch vụ này
+          const formatted = entry.number;
+          const raw = entry.rawNumber;
+
+          // Nếu là cuộc gọi mới khác raw number, reset form
+          if (!currentCall || currentCall.raw !== raw) {
+            currentCall = { formatted, raw };
+            alreadyRated = false; // reset trạng thái đã đánh giá cho call mới
+            resetForm();
+          }
+
+          // Hiển thị số đang gọi
+          document.getElementById('currentCallDisplay').innerHTML = `<span style=\"background: rgba(0,255,136,0.12); padding:0.2em 0.6em; border-radius:6px; font-family:monospace;\">${formatted}</span>`;
+          document.getElementById('customerCode').value = formatted;
+          isCallActive = true;
+
+          // Kiểm tra xem đã đánh giá chưa
+          try {
+            const q = `/is-rated?customerCode=${encodeURIComponent(formatted)}`;
+            const r2 = await fetch(q);
+            if (r2.ok) {
+              const obj = await r2.json();
+              alreadyRated = !!obj.rated;
+            }
+          } catch (err) {
+            console.error('Error checking is-rated', err);
+            // nếu lỗi, không cho phép submit để an toàn
+            alreadyRated = true;
+          }
+        } else {
+          // Không có cuộc gọi active
+          currentCall = null;
+          isCallActive = false;
+          alreadyRated = false;
+          document.getElementById('currentCallDisplay').textContent = 'Chưa có khách đang gọi';
+          document.getElementById('customerCode').value = '';
+        }
+
+        // Cập nhật trạng thái nút submit
+        checkSubmitButton();
+      } catch (error) {
+        // Không làm gì, chỉ log
+        console.error('Poll latest-calls error:', error);
+      }
+    }
+
+    // Auto-fill customer code from URL parameter
+    function loadCustomerCodeFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const customerCode = urlParams.get('customerCode');
+      if (customerCode) {
+        // Store customer code in hidden input
+        document.getElementById('customerCode').value = customerCode;
+        
+        // Update the rating label to show customer code
+        const ratingLabel = document.getElementById('ratingLabel');
+        ratingLabel.innerHTML = `Xin mời quý khách <span style="color: #00ff88; font-weight: 700; background: rgba(0,255,136,0.2); padding: 0.5vh 1vh; border-radius: 5px; font-family: monospace;">${customerCode}</span> đánh giá mức độ hài lòng khi thực hiện TTHC!`;
+        
+        // Add a subtle animation to highlight the customer code
+        const codeSpan = ratingLabel.querySelector('span');
+        if (codeSpan) {
+          codeSpan.style.animation = 'pulse 2s ease-in-out';
+        }
+      }
+    }
+
+    // Load customer code when page loads
+    document.addEventListener('DOMContentLoaded', loadCustomerCodeFromUrl);
+
+    /* ĐỔI MẬT KHẨU */
+    // Chỉ hiển thị box đổi mật khẩu nếu có query ?showChangePassword=1
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('showChangePassword') === '1') {
+        document.getElementById('changePasswordBox').style.display = 'block';
+      }
+    })();
+
+    function changePassword() {
+      const username = document.getElementById('cp-username').value.trim();
+      const oldPassword = document.getElementById('cp-old').value;
+      const newPassword = document.getElementById('cp-new').value;
+      const msg = document.getElementById('cp-message');
+      msg.textContent = '';
+      if (!username || !oldPassword || !newPassword) {
+        msg.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+        return;
+      }
+      fetch('/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, oldPassword, newPassword })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          msg.style.color = 'green';
+          msg.textContent = 'Đổi mật khẩu thành công!';
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = data.error || 'Đổi mật khẩu thất bại!';
+        }
+      })
+      .catch(() => {
+        msg.style.color = 'red';
+        msg.textContent = 'Lỗi kết nối máy chủ!';
+      });
+    }
+    /* END ĐỔI MẬT KHẨU */
+  </script>
+</body>
+</html>
