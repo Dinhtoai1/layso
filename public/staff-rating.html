@@ -422,6 +422,10 @@
           <span style="color: #fff; font-weight:600">Đang gọi: </span>
           <span id="currentCallDisplay" style="color: #00ff88; font-weight:700;">Chưa có khách đang gọi</span>
         </div>
+        <div style="margin-top:8px;">
+          <span style="color: #fff; font-weight:600">Đang gọi: </span>
+          <span id="currentCallDisplay" style="color: #00ff88; font-weight:700;">Chưa có khách đang gọi</span>
+        </div>
       </div>
       
       <div class="content">
@@ -471,7 +475,7 @@
   </div>
 
   <script>
-    let selectedRating = 0;
+  let selectedRating = 0;
   let currentCall = null; // { formatted, raw }
   let isCallActive = false;
   let alreadyRated = false;
@@ -512,50 +516,23 @@
 
     // Xử lý click vào nút đánh giá
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('📄 DOM loaded, thiết lập event listeners...');
-      
       const ratingBtns = document.querySelectorAll('.rating-btn');
-      console.log('🔘 Tìm thấy', ratingBtns.length, 'nút đánh giá');
-      
       ratingBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-          console.log('👆 Clicked rating button:', this.textContent);
-          
-          // Bỏ selected khỏi tất cả nút
           ratingBtns.forEach(b => b.classList.remove('selected'));
-          
-          // Thêm selected cho nút được chọn
           this.classList.add('selected');
-          
-          // Lưu giá trị đánh giá
           selectedRating = parseInt(this.getAttribute('data-value'));
-          console.log('⭐ Selected rating:', selectedRating);
-          
-          // Kiểm tra nút submit
           checkSubmitButton();
         });
       });
-      
-      // Khởi tạo trang
       initializePage();
-
-        // Bắt đầu poll latest-calls để đồng bộ realtime
-        setInterval(pollLatestCalls, 1500);
+      setInterval(pollLatestCalls, 1500);
     });
 
     function checkSubmitButton() {
       const serviceSelected = document.getElementById('serviceInput').value !== '';
       const ratingSelected = selectedRating > 0;
-      // Chỉ cho phép gửi khi có service, đã chọn rating, đang có cuộc gọi (isCallActive)
-      // và khách chưa được đánh giá (alreadyRated === false)
       const canSubmit = serviceSelected && ratingSelected && isCallActive && !alreadyRated;
-      
-      console.log('🔍 Kiểm tra submit button:', {
-        serviceSelected,
-        ratingSelected,
-        canSubmit
-      });
-      
       document.getElementById('submitBtn').disabled = !canSubmit;
     }
 
@@ -640,33 +617,28 @@
     async function pollLatestCalls() {
       try {
         const service = document.getElementById('serviceInput').value;
-        if (!service) return; // chưa xác định service
-
+        if (!service) return;
         const res = await fetch('/latest-calls');
         if (!res.ok) return;
         const data = await res.json();
-
-        // latest-calls trả về object keyed by service name
         const entry = data[service];
-
         if (entry && entry.number) {
-          // Có cuộc gọi đang active cho dịch vụ này
           const formatted = entry.number;
           const raw = entry.rawNumber;
-
-          // Nếu là cuộc gọi mới khác raw number, reset form
+          // Nếu là cuộc gọi mới khác raw number, reset form và cập nhật label
           if (!currentCall || currentCall.raw !== raw) {
             currentCall = { formatted, raw };
-            alreadyRated = false; // reset trạng thái đã đánh giá cho call mới
+            alreadyRated = false;
             resetForm();
           }
-
           // Hiển thị số đang gọi
-          document.getElementById('currentCallDisplay').innerHTML = `<span style=\"background: rgba(0,255,136,0.12); padding:0.2em 0.6em; border-radius:6px; font-family:monospace;\">${formatted}</span>`;
+          document.getElementById('currentCallDisplay').innerHTML = `<span style="background: rgba(0,255,136,0.12); padding:0.2em 0.6em; border-radius:6px; font-family:monospace;">${formatted}</span>`;
           document.getElementById('customerCode').value = formatted;
           isCallActive = true;
-
-          // Kiểm tra xem đã đánh giá chưa
+          // Cập nhật label động
+          const ratingLabel = document.getElementById('ratingLabel');
+          ratingLabel.innerHTML = `Xin mời Khách hàng <span style="color: #00ff88; font-weight: 700; background: rgba(0,255,136,0.2); padding: 0.5vh 1vh; border-radius: 5px; font-family: monospace;">${formatted}</span> đánh giá mức độ hài lòng khi thực hiện TTHC!`;
+          // Kiểm tra đã đánh giá chưa
           try {
             const q = `/is-rated?customerCode=${encodeURIComponent(formatted)}`;
             const r2 = await fetch(q);
@@ -675,24 +647,20 @@
               alreadyRated = !!obj.rated;
             }
           } catch (err) {
-            console.error('Error checking is-rated', err);
-            // nếu lỗi, không cho phép submit để an toàn
             alreadyRated = true;
           }
         } else {
-          // Không có cuộc gọi active
           currentCall = null;
           isCallActive = false;
           alreadyRated = false;
           document.getElementById('currentCallDisplay').textContent = 'Chưa có khách đang gọi';
           document.getElementById('customerCode').value = '';
+          // Reset label về mặc định
+          document.getElementById('ratingLabel').textContent = 'Xin mời quý khách đánh giá mức độ hài lòng khi thực hiện TTHC!';
         }
-
-        // Cập nhật trạng thái nút submit
         checkSubmitButton();
       } catch (error) {
         // Không làm gì, chỉ log
-        console.error('Poll latest-calls error:', error);
       }
     }
 
